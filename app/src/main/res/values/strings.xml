@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">BigProject</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string-array name="roles_array">
+        <item>passenger</item>
+        <item>driver</item>
+        <item>admin</item>
+    </string-array>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+
+</resources>

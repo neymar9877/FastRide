@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#A9FF8400"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp"
+        tools:ignore="MissingConstraints">
+
+        <!-- תמונה של הנהג -->
+        <ImageView
+            android:id="@+id/imgDriver"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:contentDescription="Driver Image"
+            android:scaleType="centerCrop"
+            android:src="@android:drawable/ic_menu_report_image" />
+
+        <!-- שם הנהג -->
+        <TextView
+            android:id="@+id/tvDriverName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="10dp"
+            android:layout_toEndOf="@id/imgDriver"
+            android:text="Driver Name"
+            android:textSize="36sp"
+            android:textStyle="bold" />
+
+        <!-- יעד הנסיעה -->
+        <TextView
+            android:id="@+id/tvCurrLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvDriverName"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="10dp"
+            android:layout_toEndOf="@id/imgDriver"
+            android:text="current_location"
+            android:textSize="20dp" />
+
+        <!-- מחיר -->
+
+        <!-- כפתור עדכון -->
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="69dp"
+            android:layout_marginEnd="31dp"
+            android:layout_marginRight="15dp"
+            android:text="status"
+            android:textSize="25sp"
+            android:textStyle="italic" />
+
+
+    </RelativeLayout>
+
+
+</LinearLayout>
