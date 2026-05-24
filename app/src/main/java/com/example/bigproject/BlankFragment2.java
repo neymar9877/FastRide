@@ -33,16 +33,16 @@ public class BlankFragment2 extends Fragment {
     private MapView mapView;
     private TextView tvStatus;
 
-    private List<GeoPoint> carPath;
-    private int carIndex = 0;
-    private final Handler carHandler = new Handler(Looper.getMainLooper());
-    private Runnable carAnimator;
-
-    private Marker startMarker, endMarker, carMarker;
+    private Marker driverMarker, pickupMarker, dropoffMarker;
+    private Polyline routeOverlay;
 
     private Handler pollHandler = new Handler(Looper.getMainLooper());
     private Runnable pollRunnable;
-    private boolean rideStarted = false;
+
+    private RideRequest currentRide;
+    private String driverId;
+    private boolean routeDrawn = false;
+    private String lastStatus = "";
 
     public BlankFragment2() {}
 
@@ -66,42 +66,108 @@ public class BlankFragment2 extends Fragment {
         String activeRideId = sp.getString("activeRideId", null);
 
         if (activeRideId != null) {
-            tvStatus.setText("⏳ Waiting for driver to accept...");
-            startPollingForAcceptance(activeRideId);
+            loadRideData(activeRideId);
         } else {
             tvStatus.setText("No active ride. Order a ride first.");
         }
     }
 
-    private void startPollingForAcceptance(String rideId) {
+    private void loadRideData(String rideId) {
+        tvStatus.setText("⏳ Loading ride info...");
+        RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
+            @Override
+            public void onSuccess(RideRequest ride) {
+                if (!isAdded()) return;
+                currentRide = ride;
+                driverId = ride.getDriverId();
+                requireActivity().runOnUiThread(() -> startPolling());
+            }
+            @Override
+            public void onError(Exception error) {
+                Log.e("PassengerMap", "Failed to load ride: " + error.getMessage());
+            }
+        });
+    }
+
+    private void startPolling() {
         pollRunnable = new Runnable() {
             @Override
             public void run() {
-                if (!isAdded() || rideStarted) return;
-                RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
+                if (!isAdded()) return;
+
+                // Step 1: get driver's current location
+                DriverRepo driverRepo = new DriverRepo();
+                driverRepo.getDriverLocation(driverId, new BaseRepo.RepoCallback<double[]>() {
                     @Override
-                    public void onSuccess(RideRequest ride) {
+                    public void onSuccess(double[] latLng) {
                         if (!isAdded()) return;
-                        requireActivity().runOnUiThread(() -> {
-                            String status = ride.getStatus();
-                            if ("accepted".equals(status) || "on_the_way".equals(status)) {
-                                rideStarted = true;
-                                pollHandler.removeCallbacks(pollRunnable);
-                                tvStatus.setText("🚗 Driver is on the way!");
-                                showRoute(ride);
-                            } else if ("finished".equals(status)) {
-                                rideStarted = true;
-                                pollHandler.removeCallbacks(pollRunnable);
-                                tvStatus.setText("✅ Ride complete!");
-                            } else {
-                                pollHandler.postDelayed(pollRunnable, 3000);
+
+                        // Step 2: get ride status
+                        SharedPreferences sp = requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                        String rideId = sp.getString("activeRideId", null);
+                        if (rideId == null) return;
+
+                        RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
+                            @Override
+                            public void onSuccess(RideRequest ride) {
+                                if (!isAdded()) return;
+                                requireActivity().runOnUiThread(() -> {
+                                    String status = ride.getStatus();
+                                    GeoPoint driverPos = new GeoPoint(latLng[0], latLng[1]);
+
+                                    // Update driver marker position
+                                    updateDriverMarker(driverPos);
+
+                                    if ("accepted".equals(status)) {
+                                        tvStatus.setText("🚗 Driver is coming to pick you up...");
+
+                                        // Draw route driver → pickup (only once per phase)
+                                        if (!lastStatus.equals("accepted")) {
+                                            lastStatus = "accepted";
+                                            routeDrawn = false;
+                                            drawRoute(
+                                                    driverPos,
+                                                    new GeoPoint(currentRide.getPickupLat(), currentRide.getPickupLng())
+                                            );
+                                            setupMarkers();
+                                        }
+                                        pollHandler.postDelayed(pollRunnable, 2000);
+
+                                    } else if ("on_the_way".equals(status)) {
+                                        tvStatus.setText("🚗 You're on your way!");
+
+                                        // Switch to route pickup → dropoff (only once)
+                                        if (!lastStatus.equals("on_the_way")) {
+                                            lastStatus = "on_the_way";
+                                            routeDrawn = false;
+                                            drawRoute(
+                                                    new GeoPoint(currentRide.getPickupLat(), currentRide.getPickupLng()),
+                                                    new GeoPoint(currentRide.getDropoffLat(), currentRide.getDropoffLng())
+                                            );
+                                            setupMarkers();
+                                        }
+                                        pollHandler.postDelayed(pollRunnable, 2000);
+
+                                    } else if ("finished".equals(status)) {
+                                        tvStatus.setText("✅ You have arrived!");
+                                        Toast.makeText(getContext(), "You have arrived at your destination!", Toast.LENGTH_LONG).show();
+                                        // Stop polling
+                                    } else {
+                                        pollHandler.postDelayed(pollRunnable, 2000);
+                                    }
+                                });
+                            }
+                            @Override
+                            public void onError(Exception error) {
+                                if (!isAdded()) return;
+                                pollHandler.postDelayed(pollRunnable, 2000);
                             }
                         });
                     }
                     @Override
                     public void onError(Exception error) {
                         if (!isAdded()) return;
-                        pollHandler.postDelayed(pollRunnable, 3000);
+                        pollHandler.postDelayed(pollRunnable, 2000);
                     }
                 });
             }
@@ -109,97 +175,65 @@ public class BlankFragment2 extends Fragment {
         pollHandler.post(pollRunnable);
     }
 
-    private void showRoute(RideRequest ride) {
-        GeoPoint pickupPoint = new GeoPoint(ride.getPickupLat(), ride.getPickupLng());
-        GeoPoint dropoffPoint = new GeoPoint(ride.getDropoffLat(), ride.getDropoffLng());
-
-        mapView.getController().setZoom(15.0);
-        mapView.getController().setCenter(pickupPoint);
-
-        if (startMarker == null) {
-            startMarker = new Marker(mapView);
-            startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            startMarker.setIcon(getResources().getDrawable(R.drawable.baseline_place_24));
-            startMarker.setTitle("📍 Your Pickup");
-            mapView.getOverlays().add(startMarker);
+    private void updateDriverMarker(GeoPoint position) {
+        if (driverMarker == null) {
+            driverMarker = new Marker(mapView);
+            driverMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            driverMarker.setTitle("🚗 Your Driver");
+            driverMarker.setIcon(getResources().getDrawable(R.drawable.baseline_directions_car_24));
+            mapView.getOverlays().add(driverMarker);
         }
-        startMarker.setPosition(pickupPoint);
-
-        if (endMarker == null) {
-            endMarker = new Marker(mapView);
-            endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            endMarker.setIcon(getResources().getDrawable(R.drawable.baseline_place_24));
-            endMarker.setTitle("🏁 Your Destination");
-            mapView.getOverlays().add(endMarker);
-        }
-        endMarker.setPosition(dropoffPoint);
-
-        drawRoute(pickupPoint, dropoffPoint);
+        driverMarker.setPosition(position);
+        mapView.getController().setCenter(position);
+        mapView.invalidate();
     }
 
-    private void drawRoute(GeoPoint start, GeoPoint end) {
+    private void setupMarkers() {
+        // Pickup marker
+        if (pickupMarker == null) {
+            pickupMarker = new Marker(mapView);
+            pickupMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            pickupMarker.setIcon(getResources().getDrawable(R.drawable.baseline_place_24));
+            pickupMarker.setTitle("📍 Pickup");
+            mapView.getOverlays().add(pickupMarker);
+        }
+        pickupMarker.setPosition(new GeoPoint(currentRide.getPickupLat(), currentRide.getPickupLng()));
+
+        // Dropoff marker
+        if (dropoffMarker == null) {
+            dropoffMarker = new Marker(mapView);
+            dropoffMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            dropoffMarker.setIcon(getResources().getDrawable(R.drawable.baseline_place_24));
+            dropoffMarker.setTitle("🏁 Destination");
+            mapView.getOverlays().add(dropoffMarker);
+        }
+        dropoffMarker.setPosition(new GeoPoint(currentRide.getDropoffLat(), currentRide.getDropoffLng()));
+
+        mapView.invalidate();
+    }
+
+    private void drawRoute(GeoPoint from, GeoPoint to) {
+        if (routeOverlay != null) mapView.getOverlays().remove(routeOverlay);
+
         ArrayList<GeoPoint> waypoints = new ArrayList<>();
-        waypoints.add(start);
-        waypoints.add(end);
+        waypoints.add(from);
+        waypoints.add(to);
 
         RoadManager roadManager = new OSRMRoadManager(getContext(), "ANDROID");
 
         new Thread(() -> {
             Road road = roadManager.getRoad(waypoints);
-            Polyline roadOverlay = RoadManager.buildRoadOverlay(road);
-            roadOverlay.setWidth(12f);
-            roadOverlay.setColor(0xFF1E88E5);
-
-            List<GeoPoint> routePoints = roadOverlay.getActualPoints();
+            Polyline overlay = RoadManager.buildRoadOverlay(road);
+            overlay.setWidth(10f);
+            overlay.setColor(0xFF1E88E5); // blue
 
             requireActivity().runOnUiThread(() -> {
-                mapView.getOverlays().add(roadOverlay);
+                if (routeOverlay != null) mapView.getOverlays().remove(routeOverlay);
+                routeOverlay = overlay;
+                mapView.getOverlays().add(routeOverlay);
                 mapView.invalidate();
-
-                if (routePoints != null && routePoints.size() > 1) {
-                    startCarAnimation(routePoints);
-                }
             });
         }).start();
-    }
-
-    private void startCarAnimation(List<GeoPoint> routePoints) {
-        carPath = routePoints;
-        carIndex = 0;
-
-        if (carMarker == null) {
-            carMarker = new Marker(mapView);
-            carMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            carMarker.setTitle("🚗 Your Driver");
-            carMarker.setIcon(getResources().getDrawable(R.drawable.baseline_directions_car_24));
-            mapView.getOverlays().add(carMarker);
-        }
-
-        carMarker.setPosition(carPath.get(0));
-        mapView.getController().setCenter(carPath.get(0));
-        mapView.invalidate();
-
-        carAnimator = new Runnable() {
-            @Override
-            public void run() {
-                if (!isAdded() || carPath == null || carIndex >= carPath.size()) {
-                    if (isAdded()) {
-                        tvStatus.setText("✅ You have arrived!");
-                        Toast.makeText(getContext(), "You have arrived at your destination!", Toast.LENGTH_LONG).show();
-                    }
-                    return;
-                }
-
-                GeoPoint nextPoint = carPath.get(carIndex);
-                carIndex++;
-                carMarker.setPosition(nextPoint);
-                mapView.getController().setCenter(nextPoint);
-                mapView.invalidate();
-                carHandler.postDelayed(this, 300);
-            }
-        };
-
-        carHandler.post(carAnimator);
     }
 
     @Override
@@ -212,7 +246,6 @@ public class BlankFragment2 extends Fragment {
     public void onPause() {
         super.onPause();
         if (mapView != null) mapView.onPause();
-        if (carHandler != null && carAnimator != null) carHandler.removeCallbacks(carAnimator);
         if (pollHandler != null && pollRunnable != null) pollHandler.removeCallbacks(pollRunnable);
     }
 }
