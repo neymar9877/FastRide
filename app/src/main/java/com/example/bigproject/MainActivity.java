@@ -108,6 +108,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public void goToOrdersFragment() {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new BlankFragment3())
+                .commit();
+        bottomNavBar.setSelectedItemId(R.id.nav_order);
+    }
+
     // ===================== RIDE ACCESS LOGIC =====================
 
     private void tryOpenMapFragment() {
