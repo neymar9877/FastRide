@@ -172,47 +172,62 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     private void showAddDriverDialog() {
-        // Use your new XML for User details (Name, Image, Phone)
-        View dialogView = LayoutInflater.from(AdminActivity.this).inflate(R.layout.dialog_user, null);
-        EditText etName = dialogView.findViewById(R.id.etUserName);
-        EditText etPhone = dialogView.findViewById(R.id.etUserPhone);
-        EditText etImage = dialogView.findViewById(R.id.etUserImage);
+        View dialogView = LayoutInflater.from(AdminActivity.this)
+                .inflate(R.layout.dialog_add_driver, null);
+
+        EditText etName  = dialogView.findViewById(R.id.etAddName);
+        EditText etPass  = dialogView.findViewById(R.id.etAddPassword);
+        EditText etEmail = dialogView.findViewById(R.id.etAddEmail);
+        EditText etPhone = dialogView.findViewById(R.id.etAddPhone);
+        EditText etImage = dialogView.findViewById(R.id.etAddImage);
 
         new AlertDialog.Builder(AdminActivity.this)
                 .setTitle("Add New Driver")
                 .setView(dialogView)
                 .setPositiveButton("Add", (dialog, which) -> {
-                    String name = etName.getText().toString().trim();
+                    String name  = etName.getText().toString().trim();
+                    String pass  = etPass.getText().toString().trim();
+                    String email = etEmail.getText().toString().trim();
+                    String phone = etPhone.getText().toString().trim();
+                    String image = etImage.getText().toString().trim();
 
-                    // 1. Create the User first
-                    User newUser = new User(null, name, "", "", etPhone.getText().toString(), etImage.getText().toString(), "driver");
+                    if (name.isEmpty() || pass.isEmpty()) {
+                        Toast.makeText(AdminActivity.this, "Name and password required", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
+                    User newUser = new User(null, name, pass, email, phone,
+                            image.isEmpty() ? DEFAULT_IMAGE_URL : image, "driver");
 
-                    userRepo.addUser(newUser, new UserRepo.RepoCallback<User>() {
+                    userRepo.addUser(newUser, new BaseRepo.RepoCallback<User>() {
                         @Override
                         public void onSuccess(User addedUser) {
-                            // 2. Now create the Driver entry using the same ID
-                            Driver newDriver = new Driver(addedUser.getId(), "Pending", "Active");
-                            driverRepo.addUser(newDriver, new DriverRepo.RepoCallback<Driver>() {
+                            Driver newDriver = new Driver(addedUser.getId(), "", "available");
+                            driverRepo.addUser(newDriver, new BaseRepo.RepoCallback<Driver>() {
                                 @Override
                                 public void onSuccess(Driver result) {
                                     runOnUiThread(() -> {
                                         DriverWithUser dwu = new DriverWithUser();
                                         dwu.setId(result.getId());
-                                        dwu.setCurrentLocation(result.getCurrentLocation());
                                         dwu.setStatus(result.getStatus());
                                         dwu.setUsers(addedUser);
-
                                         driversList.add(dwu);
                                         adapter.notifyItemInserted(driversList.size() - 1);
+                                        Toast.makeText(AdminActivity.this, "Driver added!", Toast.LENGTH_SHORT).show();
                                     });
                                 }
                                 @Override
-                                public void onError(Exception e) { /* handle */ }
+                                public void onError(Exception e) {
+                                    runOnUiThread(() ->
+                                            Toast.makeText(AdminActivity.this, "Failed to add driver", Toast.LENGTH_SHORT).show());
+                                }
                             });
                         }
                         @Override
-                        public void onError(Exception e) { /* handle */ }
+                        public void onError(Exception e) {
+                            runOnUiThread(() ->
+                                    Toast.makeText(AdminActivity.this, "Failed to add user", Toast.LENGTH_SHORT).show());
+                        }
                     });
                 })
                 .setNegativeButton("Cancel", null)
@@ -221,34 +236,47 @@ public class AdminActivity extends AppCompatActivity {
 
 
     private void showUpdateDriverDialog(DriverWithUser driver, int position) {
-        View dialogView = LayoutInflater.from(AdminActivity.this).inflate(R.layout.dialog_add_ride, null);
-        EditText etCurrentLocation = dialogView.findViewById(R.id.etCurrentLocation);
-        EditText etStatus = dialogView.findViewById(R.id.etStatus);
+        View dialogView = LayoutInflater.from(AdminActivity.this)
+                .inflate(R.layout.dialog_update_driver, null);
 
+        EditText etEmail = dialogView.findViewById(R.id.etEmailDriver);
+        EditText etPhone = dialogView.findViewById(R.id.etPhoneDriver);
+        EditText etImage = dialogView.findViewById(R.id.etImageDriver);
 
-        etCurrentLocation.setText(driver.getCurrentLocation());
-        etStatus.setText(driver.getStatus());
+        // Pre-fill with current values
+        if (driver.getUsers() != null) {
+            etEmail.setText(driver.getUsers().getEmail());
+            etPhone.setText(driver.getUsers().getPhone());
+            etImage.setText(driver.getUsers().getImageUrl());
+        }
 
         new AlertDialog.Builder(AdminActivity.this)
-                .setTitle("Update Ride")
+                .setTitle("Update Driver")
                 .setView(dialogView)
                 .setPositiveButton("Save", (dialog, which) -> {
-                    // 1. Update the local data for the UI
-                    driver.setCurrentLocation(etCurrentLocation.getText().toString());
-                    driver.setStatus(etStatus.getText().toString());
-                    adapter.notifyItemChanged(position);
+                    if (driver.getUsers() == null) return;
 
-                    // 2. Convert DriverWithUser to a plain Driver object
-                    Driver driverToUpdate = new Driver(
-                            driver.getId(),
-                            driver.getCurrentLocation(),
-                            driver.getStatus()
-                    );
+                    driver.getUsers().setEmail(etEmail.getText().toString().trim());
+                    driver.getUsers().setPhone(etPhone.getText().toString().trim());
+                    String image = etImage.getText().toString().trim();
+                    driver.getUsers().setImageUrl(image.isEmpty() ? DEFAULT_IMAGE_URL : image);
 
-                    // 3. Pass the CORRECT type (Driver) to the method
-                    updateDriverInSupabase(driverToUpdate);
+                    UserRepo repo = new UserRepo();
+                    repo.updateUser(driver.getUsers(), new BaseRepo.RepoCallback<User>() {
+                        @Override
+                        public void onSuccess(User result) {
+                            runOnUiThread(() -> {
+                                adapter.notifyItemChanged(position);
+                                Toast.makeText(AdminActivity.this, "Driver updated!", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                        @Override
+                        public void onError(Exception error) {
+                            runOnUiThread(() ->
+                                    Toast.makeText(AdminActivity.this, "Update failed", Toast.LENGTH_SHORT).show());
+                        }
+                    });
                 })
-
                 .setNegativeButton("Cancel", (dialog, which) -> adapter.notifyDataSetChanged())
                 .show();
     }
@@ -289,24 +317,28 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     private void deleteDriver(DriverWithUser driver, int position) {
-        // 1️⃣ Temporarily remove from list
-        DriverWithUser deletedrive = driversList.remove(position);
+        DriverWithUser deleted = driversList.remove(position);
         adapter.notifyItemRemoved(position);
 
-        // 2️⃣ Show Undo Snackbar
-        Snackbar.make(recyclerDrivers, "driver deleted", Snackbar.LENGTH_LONG)
+        Snackbar.make(recyclerDrivers, "Driver deleted", Snackbar.LENGTH_LONG)
                 .setAction("UNDO", v -> {
-                    // 3️⃣ User tapped UNDO → restore
-                    driversList.add(position, deletedrive);
+                    driversList.add(position, deleted);
                     adapter.notifyItemInserted(position);
                 })
                 .addCallback(new Snackbar.Callback() {
                     @Override
                     public void onDismissed(Snackbar snackbar, int event) {
                         if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
-                            // 4️⃣ Snackbar timed out → actually delete from Supabase
-                            Driver driverToDelete = deletedrive.toDriver();
-                            deleteDriverFromSupabase(driverToDelete);
+                            // Delete from drivers table
+                            deleteDriverFromSupabase(deleted.toDriver());
+                            // Also delete from users table
+                            if (deleted.getUsers() != null) {
+                                userRepo.deleteUser(deleted.getUsers().getId(),
+                                        new BaseRepo.RepoCallback<Boolean>() {
+                                            @Override public void onSuccess(Boolean result) {}
+                                            @Override public void onError(Exception error) {}
+                                        });
+                            }
                         }
                     }
                 })

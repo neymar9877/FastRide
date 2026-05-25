@@ -29,8 +29,6 @@ import com.example.bigproject.R;
 import com.example.bigproject.RideRepo;
 import com.example.bigproject.RideRequest;
 import com.example.bigproject.RideRequestAdapter;
-import com.example.bigproject.User;
-import com.example.bigproject.UserRepo;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 
@@ -74,6 +72,22 @@ public class DriverHomeFragment extends Fragment {
         requestsList = new ArrayList<>();
 
         SharedPreferences sp = requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+        String savedId = sp.getString("userId", null);
+
+        if (savedId != null) {
+            driverId = savedId;
+
+            if (ActivityCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                }, 101);
+            } else {
+                saveLocationToSupabase();
+            }
+            startPolling();
+        }
 
         adapter = new RideRequestAdapter(requestsList, new RideRequestAdapter.OnRideActionListener() {
             @Override
@@ -85,9 +99,12 @@ public class DriverHomeFragment extends Fragment {
         recyclerRequests.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerRequests.setAdapter(adapter);
 
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
-            public boolean onMove(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh, @NonNull RecyclerView.ViewHolder t) { return false; }
+            public boolean onMove(@NonNull RecyclerView rv,
+                                  @NonNull RecyclerView.ViewHolder vh,
+                                  @NonNull RecyclerView.ViewHolder t) { return false; }
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
@@ -96,53 +113,66 @@ public class DriverHomeFragment extends Fragment {
                 else declineRide(ride, position);
             }
         }).attachToRecyclerView(recyclerRequests);
+    }
 
-        String savedId = sp.getString("userId", null);
-        if (savedId != null) {
-            driverId = savedId;
-            saveLocationToSupabase();
-            startPolling();
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 101) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                saveLocationToSupabase();
+            } else {
+                Toast.makeText(getContext(),
+                        "Location permission is required to show your position to passengers.",
+                        Toast.LENGTH_LONG).show();
+            }
         }
     }
 
     private void saveLocationToSupabase() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 101);
-            return;
-        }
-
         com.google.android.gms.location.LocationRequest locationRequest =
-                com.google.android.gms.location.LocationRequest.create()
-                        .setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY)
-                        .setNumUpdates(1)
-                        .setInterval(0);
+                new com.google.android.gms.location.LocationRequest.Builder(0)
+                        .setPriority(com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY)
+                        .setMaxUpdates(1)
+                        .build();
 
-        fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                new com.google.android.gms.location.LocationCallback() {
-                    @Override
-                    public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
-                        if (locationResult == null) return;
-                        android.location.Location location = locationResult.getLastLocation();
-                        if (location != null && driverId != null) {
-                            driverRepo.updateDriverLocation(driverId, location.getLatitude(), location.getLongitude(),
-                                    new BaseRepo.RepoCallback<Boolean>() {
-                                        @Override
-                                        public void onSuccess(Boolean result) {
-                                            Log.d("DriverHome", "Location saved: " + location.getLatitude() + ", " + location.getLongitude());
-                                        }
-                                        @Override
-                                        public void onError(Exception error) {
-                                            Log.e("DriverHome", "Location save failed: " + error.getMessage());
-                                        }
-                                    });
+        if (ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    new com.google.android.gms.location.LocationCallback() {
+                        @Override
+                        public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
+                            if (locationResult == null) return;
+                            android.location.Location location = locationResult.getLastLocation();
+                            if (location != null && driverId != null) {
+                                driverRepo.updateDriverLocation(driverId,
+                                        location.getLatitude(),
+                                        location.getLongitude(),
+                                        new BaseRepo.RepoCallback<Boolean>() {
+                                            @Override
+                                            public void onSuccess(Boolean result) {
+                                                Log.d("DriverHome", "Location saved: "
+                                                        + location.getLatitude() + ", "
+                                                        + location.getLongitude());
+                                            }
+                                            @Override
+                                            public void onError(Exception error) {
+                                                Log.e("DriverHome", "Location save failed: "
+                                                        + error.getMessage());
+                                            }
+                                        });
+                            }
                         }
-                    }
-                },
-                Looper.getMainLooper()
-        );
+                    },
+                    Looper.getMainLooper()
+            );
+        }
     }
 
     private void startPolling() {
@@ -178,7 +208,9 @@ public class DriverHomeFragment extends Fragment {
                 });
             }
             @Override
-            public void onError(Exception error) { Log.e("DriverHome", "Fetch error: " + error.getMessage()); }
+            public void onError(Exception error) {
+                Log.e("DriverHome", "Fetch error: " + error.getMessage());
+            }
         });
     }
 
@@ -188,11 +220,14 @@ public class DriverHomeFragment extends Fragment {
             public void onSuccess(Boolean result) {
                 if (!isAdded()) return;
                 requireActivity().runOnUiThread(() -> {
+                    SharedPreferences sp = requireContext()
+                            .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                    sp.edit().putString("activeRideId", ride.getId()).apply();
+
                     requestsList.remove(position);
                     adapter.notifyItemRemoved(position);
-                    SharedPreferences sp = requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
-                    sp.edit().putString("activeRideId", ride.getId()).apply();
-                    Toast.makeText(getContext(), "Ride accepted! Opening map...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Ride accepted! Opening map...",
+                            Toast.LENGTH_SHORT).show();
                     if (getActivity() instanceof DriverActivity) {
                         ((DriverActivity) getActivity()).onRideAccepted();
                     }
@@ -223,7 +258,8 @@ public class DriverHomeFragment extends Fragment {
             @Override
             public void onError(Exception error) {
                 if (!isAdded()) return;
-                requireActivity().runOnUiThread(() -> adapter.notifyItemChanged(position));
+                requireActivity().runOnUiThread(() ->
+                        adapter.notifyItemChanged(position));
             }
         });
     }
@@ -231,7 +267,8 @@ public class DriverHomeFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (pollHandler != null && pollRunnable != null) pollHandler.removeCallbacks(pollRunnable);
+        if (pollHandler != null && pollRunnable != null)
+            pollHandler.removeCallbacks(pollRunnable);
     }
 
     @Override

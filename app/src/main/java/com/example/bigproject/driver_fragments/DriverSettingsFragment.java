@@ -91,52 +91,49 @@ public class DriverSettingsFragment extends Fragment {
     }
 
     private void showUpdateDialog(User user) {
-        String default_image = AdminActivity.DEFAULT_IMAGE_URL;
-        // Inflate only the dialog layout
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_update_driver, null);
 
-        EditText etEmail  = dialogView.findViewById(R.id.etEmailDriver);
-        EditText etPhone  = dialogView.findViewById(R.id.etPhoneDriver);
-        EditText etImage  = dialogView.findViewById(R.id.etImageDriver);
+        EditText etUsername = dialogView.findViewById(R.id.etEmailDriver);
+        EditText etPassword = dialogView.findViewById(R.id.etPhoneDriver);
 
-        etEmail.setText(user.getEmail());
-        etPhone.setText(user.getPhone());
-        etImage.setText(user.getImageUrl());
+        // Reuse the existing fields but change hints
+        etUsername.setHint("New Username");
+        etUsername.setText(user.getUserName());
+        etPassword.setHint("New Password");
+        etPassword.setText(user.getPassword());
+
+        // Hide the image field
+        dialogView.findViewById(R.id.etImageDriver).setVisibility(View.GONE);
 
         new AlertDialog.Builder(requireContext())
                 .setTitle("Update Profile")
                 .setView(dialogView)
                 .setPositiveButton("Save", (dialog, which) -> {
-                    user.setEmail(etEmail.getText().toString().trim());
-                    user.setPhone(etPhone.getText().toString().trim());
-                    String image = etImage.getText().toString().trim();
-                    user.setImageUrl(image.isEmpty()
-                            ? default_image
-                            : image);
+                    String newUsername = etUsername.getText().toString().trim();
+                    String newPassword = etPassword.getText().toString().trim();
+
+                    if (newUsername.isEmpty() || newPassword.isEmpty()) {
+                        Toast.makeText(getContext(), "Fields cannot be empty", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    user.setUserName(newUsername);
+                    user.setPassword(newPassword);
+
                     UserRepo repo = new UserRepo();
                     repo.updateUser(user, new BaseRepo.RepoCallback<User>() {
                         @Override
                         public void onSuccess(User result) {
                             requireActivity().runOnUiThread(() ->
-                                    Toast.makeText(
-                                            requireContext(),
-                                            "Profile updated",
-                                            Toast.LENGTH_SHORT
-                                    ).show());
+                                    Toast.makeText(requireContext(), "Profile updated!", Toast.LENGTH_SHORT).show());
                         }
-
                         @Override
                         public void onError(Exception error) {
                             requireActivity().runOnUiThread(() ->
-                                    Toast.makeText(
-                                            requireContext(),
-                                            "Update failed",
-                                            Toast.LENGTH_SHORT
-                                    ).show());
+                                    Toast.makeText(requireContext(), "Update failed", Toast.LENGTH_SHORT).show());
                         }
                     });
-
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

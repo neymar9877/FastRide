@@ -332,7 +332,6 @@ public class BlankFragment2 extends Fragment {
                 });
             }, 5000);
         }
-        }
     }
 
     @Override
