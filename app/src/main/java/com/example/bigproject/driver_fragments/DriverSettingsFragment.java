@@ -66,15 +66,15 @@ public class DriverSettingsFragment extends Fragment {
         SharedPreferences sp =
                 requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
 
-        String userName = sp.getString("userName", null);
+        String userId = sp.getString("userId", null);
 
-        if (userName == null) {
+        if (userId == null) {
             Toast.makeText(getContext(), "User not found", Toast.LENGTH_SHORT).show();
             return;
         }
 
         UserRepo userRepo = new UserRepo();
-        userRepo.CheckUserExist(userName, new BaseRepo.RepoCallback<User>() {
+        userRepo.getUserById(userId, new BaseRepo.RepoCallback<User>() {
             @Override
             public void onSuccess(User result) {
                 requireActivity().runOnUiThread(() ->
@@ -89,6 +89,7 @@ public class DriverSettingsFragment extends Fragment {
             }
         });
     }
+
 
     private void showUpdateDialog(User user) {
         View dialogView = LayoutInflater.from(requireContext())
