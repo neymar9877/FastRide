@@ -1,5 +1,7 @@
 package com.example.bigproject;
 
+import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,9 +9,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 
 import java.util.List;
 
@@ -49,9 +56,24 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
         holder.txtStatus.setText(driver.getStatus());
 
 
-        // Load the image from the DB
         Glide.with(holder.imgRide.getContext())
                 .load(driver.getUsers().getImageUrl())
+                .listener(new RequestListener<Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                        Log.e("ImageLoad", "Failed to load image for driver: "
+                                + driver.getUsers().getUserName() + " → showing default");
+                        holder.imgRide.setImageResource(R.drawable.baseline_directions_car_24);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                        return false;
+                    }
+                })
+                .placeholder(R.drawable.baseline_directions_car_24)
+                .circleCrop()
                 .into(holder.imgRide);
 
         holder.itemView.setOnClickListener(v -> listener.onClick(driver, position));

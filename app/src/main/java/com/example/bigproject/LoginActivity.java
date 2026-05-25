@@ -5,11 +5,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -45,7 +47,7 @@ public class LoginActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         btnSignUp = findViewById(R.id.btnSignUp);
-        cbRememberme = findViewById(R.id.checkBoxId);
+        cbRememberme = findViewById(R.id.cbRememberme);
 
         sp = getSharedPreferences("myPrefs", MODE_PRIVATE);
         checkIfFIrstRun();
@@ -53,33 +55,76 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String UserName = etUserName.getText().toString().trim();
-                String Password = etPassword.getText().toString().trim();
+                String userName = etUserName.getText().toString().trim();
+                String password = etPassword.getText().toString().trim();
 
-                if (UserName.isEmpty() || Password.isEmpty()) { // check if fields have text
-                    Toast.makeText(LoginActivity.this, "Fill both fields", Toast.LENGTH_SHORT).show();
+                if (userName.isEmpty() || password.isEmpty()) {
+                    Toast.makeText(LoginActivity.this, "Please fill in both fields", Toast.LENGTH_SHORT).show();
                     return;
                 }
-
-                handleLogin(UserName, Password);
+                handleLogin(userName, password);
             }
         });
 
 
-        btnSignUp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String UserName = etUserName.getText().toString().trim();
-                String Password = etPassword.getText().toString().trim();
+        btnSignUp.setOnClickListener(v -> showSignUpDialog());
+    }
 
-                if (UserName.isEmpty() || Password.isEmpty()) { // check if fields have text
-                    Toast.makeText(LoginActivity.this, "Fill both fields", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+    private void showSignUpDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_signup_details, null);
 
-                checkIfUserExistsAndContinue(UserName, Password);
-            }
-        });
+        EditText etName  = dialogView.findViewById(R.id.etSignUpName);
+        EditText etPass  = dialogView.findViewById(R.id.etSignUpPassword);
+        EditText etEmail = dialogView.findViewById(R.id.etSignUpEmail);
+        EditText etPhone = dialogView.findViewById(R.id.etSignUpPhone);
+        EditText etImage = dialogView.findViewById(R.id.etSignUpImage);
+        RadioGroup rgRole = dialogView.findViewById(R.id.rgRole);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Create Account")
+                .setView(dialogView)
+                .setPositiveButton("Sign Up", (dialog, which) -> {
+                    String name  = etName.getText().toString().trim();
+                    String pass  = etPass.getText().toString().trim();
+                    String email = etEmail.getText().toString().trim();
+                    String phone = etPhone.getText().toString().trim();
+                    String image = etImage.getText().toString().trim();
+
+                    if (name.isEmpty() || pass.isEmpty()) {
+                        Toast.makeText(this, "Name and password are required", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    int selectedId = rgRole.getCheckedRadioButtonId();
+                    String role = (selectedId == R.id.rbDriver) ? "driver" : "passenger";
+
+                    String finalImage = image.isEmpty()
+                            ? "https://img.freepik.com/premium-vector/default-male-user-profile-icon-vector-illustration_276184-168.jpg"
+                            : image;
+
+                    User newUser = new User(null, name, pass, email, phone, finalImage, role);
+
+                    UserRepo repo = new UserRepo();
+                    repo.addUser(newUser, new BaseRepo.RepoCallback<User>() {
+                        @Override
+                        public void onSuccess(User result) {
+                            runOnUiThread(() -> {
+                                sp.edit().putString("userId", result.getId()).apply();
+                                Toast.makeText(LoginActivity.this,
+                                        "Account created! Please login.", Toast.LENGTH_SHORT).show();
+                                etUserName.setText(name);
+                            });
+                        }
+                        @Override
+                        public void onError(Exception error) {
+                            runOnUiThread(() ->
+                                    Toast.makeText(LoginActivity.this,
+                                            "Sign up failed: " + error.getMessage(), Toast.LENGTH_SHORT).show());
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void checkIfFIrstRun(){
@@ -95,122 +140,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void checkIfUserExistsAndContinue(String userName, String password) {
-        UserRepo.getAllUsers(new UserRepo.RepoCallback<List<User>>() {
-            @Override
-            public void onSuccess(List<User> result) {
-                for (User user : result) {
-                    if (userName.equals(user.getUserName())) {
-                        runOnUiThread(() ->
-                                Toast.makeText(
-                                        LoginActivity.this,
-                                        "Username already exists",
-                                        Toast.LENGTH_SHORT
-                                ).show()
-                        );
-                        return;
-                    }
-                }
-                // Username is free → continue to details dialog
-                runOnUiThread(() -> showSignUpDetailsDialog(userName, password));
-            }
-
-
-            @Override
-            public void onError(Exception error) {
-                runOnUiThread(() ->
-                        Toast.makeText(
-                                LoginActivity.this,
-                                "Error checking users",
-                                Toast.LENGTH_SHORT
-                        ).show()
-                );
-            }
-        });
-    }
-
-    private void showSignUpDetailsDialog(String userName, String password) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Complete Sign Up");
-
-        View view = getLayoutInflater().inflate(R.layout.dialog_signup_details, null);
-        builder.setView(view);
-
-        EditText etEmail = view.findViewById(R.id.etEmail);
-        EditText etPhone = view.findViewById(R.id.etPhone);
-        EditText etImage = view.findViewById(R.id.etImage);
-        Spinner spinnerRole = view.findViewById(R.id.spinnerRole);
-
-        // get the role from the spinner
-        ArrayAdapter<CharSequence> adapter =
-                ArrayAdapter.createFromResource(
-                        this,
-                        R.array.roles_array,
-                        android.R.layout.simple_spinner_item
-                );
-
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerRole.setAdapter(adapter);
-
-
-        builder.setPositiveButton("Create Account", null);
-        builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            String email = etEmail.getText().toString().trim();
-            String phone = etPhone.getText().toString().trim();
-            String image = etImage.getText().toString().trim();
-            String role = spinnerRole.getSelectedItem().toString();
-
-            if (email.isEmpty() || phone.isEmpty() || role.isEmpty()) {
-                Toast.makeText(this, "All fields required", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if(image.isEmpty()){
-                image = deafultImageUrl;
-            }
-
-            User newUser = new User(null, userName, password, email, phone, image, role);
-            createUser(newUser, dialog);
-        });
-
-    }
-
-    private void createUser(User user, AlertDialog dialog) {
-        UserRepo repo = new UserRepo();
-
-        repo.addUser(user, new UserRepo.RepoCallback<User>() {
-            @Override
-            public void onSuccess(User createdUser) {
-                runOnUiThread(() -> {
-                    Toast.makeText(
-                            LoginActivity.this,
-                            "User created successfully",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                    dialog.dismiss();
-
-                    //  auto login after sign up
-                    switchScreen(createdUser.getRole());
-                    finish();
-                });
-            }
-
-            @Override
-            public void onError(Exception error) {runOnUiThread(() ->
-                    Toast.makeText(
-                            LoginActivity.this,
-                            "Failed to create user",
-                            Toast.LENGTH_SHORT
-                    ).show()
-            );
-
-            }
-        });
-    }
 
         public void handleLogin(String userName, String Password){
         UserRepo repo = new UserRepo();
