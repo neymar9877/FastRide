@@ -1,16 +1,12 @@
 package com.example.bigproject;
 
 import android.util.Log;
-
 import androidx.annotation.NonNull;
-
 import com.google.gson.reflect.TypeToken;
-
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -18,12 +14,19 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+/**
+ * Repository class for all operations on the 'drivers' table in Supabase.
+ * Handles CRUD operations and joining driver data with user data.
+ * Extends BaseRepo for shared HTTP client and credentials.
+ */
+public class DriverRepo extends BaseRepo {
 
-public class DriverRepo extends BaseRepo
-{
-
-
-    public void getAllUsers(RepoCallback<List<Driver>> callBack){
+    /**
+     * Task: fetches all drivers from the Supabase 'drivers' table.
+     * Input: callBack (RepoCallback<List<Driver>>)
+     * Output: List<Driver> via callback, or Exception on failure
+     */
+    public void getAllUsers(RepoCallback<List<Driver>> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers";
         Request request = new Request.Builder()
                 .url(url)
@@ -35,33 +38,31 @@ public class DriverRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("Error fetching drivers", e.getMessage());
                 callBack.onError(e);
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if(response.isSuccessful()) {
+                if (response.isSuccessful()) {
                     String json = response.body().string();
-                    Type listType = new TypeToken<List<Driver>>() {
-                    }.getType();
-                    Log.d("Repository Users fetched", json);
-                    List<Driver> users = gson.fromJson(json, listType);
-                    callBack.onSuccess(users);
-                    Log.d("Repository Users fetched", users.toString());
-                } else{
-                    Log.e("Repository Error fetching users", response.message() + response.code());
-                    callBack.onError(new Exception("Error fetching users"));
+                    Type listType = new TypeToken<List<Driver>>() {}.getType();
+                    callBack.onSuccess(gson.fromJson(json, listType));
+                } else {
+                    callBack.onError(new Exception("Error fetching drivers"));
                 }
             }
         });
     }
 
-
-    public void addUser(Driver newDriver, RepoCallback<Driver> callBack){
+    /**
+     * Task: inserts a new driver record into the Supabase 'drivers' table.
+     * Should be called after addUser() in UserRepo with the same ID.
+     * Input: newDriver (Driver), callBack (RepoCallback<Driver>)
+     * Output: the inserted Driver with generated fields via callback
+     */
+    public void addUser(Driver newDriver, RepoCallback<Driver> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers";
         String json = gson.toJson(newDriver);
-        Log.d("Repository", "Sending JSON: " + gson.toJson(newDriver));
         RequestBody requestBody = RequestBody.create(json, MediaType.parse("application/json"));
 
         Request request = new Request.Builder()
@@ -76,42 +77,36 @@ public class DriverRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("Repository", "Error adding user", e);
                 callBack.onError(e);
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if(response.isSuccessful()){
+                if (response.isSuccessful()) {
                     String jsonResponse = response.body().string();
-                    Log.d("Repository", "Driver added successfully:" + jsonResponse);
-                    Type listType = new TypeToken<List<Driver>>(){}.getType();
+                    Type listType = new TypeToken<List<Driver>>() {}.getType();
                     List<Driver> addedDrivers = gson.fromJson(jsonResponse, listType);
-                    if (!addedDrivers.isEmpty()) {
-                        Driver addedDriver = addedDrivers.get(0);
-                        callBack.onSuccess(addedDriver);
-                    }
-                    else{
-                        Log.e("Repository", "Error adding Driver" + response.message());
-                        callBack.onError(new Exception("Error adding Driver" + response.code() + response.message()));
-                    }
-                }
-                else {
+                    if (!addedDrivers.isEmpty()) callBack.onSuccess(addedDrivers.get(0));
+                    else callBack.onError(new Exception("Error adding Driver"));
+                } else {
                     String errorBody = response.body() != null ? response.body().string() : "null";
-                    Log.e("Repository", "Insert failed → " + response.code() + " | " + response.message());
-                    Log.e("Repository", "Error body: " + errorBody);
                     callBack.onError(new Exception("HTTP " + response.code() + ": " + errorBody));
                 }
             }
         });
     }
 
+    /**
+     * Task: fetches all drivers and joins each with their corresponding User data.
+     * Performs two sequential requests: first to 'drivers', then to 'users'.
+     * Matches by ID to create DriverWithUser objects.
+     * Input: callBack (RepoCallback<List<DriverWithUser>>)
+     * Output: List<DriverWithUser> with combined data via callback
+     */
     public void getDriversWithUsers(RepoCallback<List<DriverWithUser>> callBack) {
-        // Step 1: Get all Drivers
         getAllUsers(new RepoCallback<List<Driver>>() {
             @Override
             public void onSuccess(List<Driver> drivers) {
-                // Step 2: Get all Users from the users table
                 String userUrl = SUPABASE_URL + "/rest/v1/users";
                 Request userRequest = new Request.Builder()
                         .url(userUrl)
@@ -127,18 +122,15 @@ public class DriverRepo extends BaseRepo
                     public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                         if (response.isSuccessful()) {
                             String json = response.body().string();
-                            Type listType = new TypeToken<List<User>>(){}.getType();
+                            Type listType = new TypeToken<List<User>>() {}.getType();
                             List<User> allUsers = gson.fromJson(json, listType);
 
-                            // Step 3: Match them by ID
                             List<DriverWithUser> joinedList = new ArrayList<>();
                             for (Driver driver : drivers) {
                                 DriverWithUser driverWithUser = new DriverWithUser();
                                 driverWithUser.setId(driver.getId());
                                 driverWithUser.setCurrentLocation(driver.getCurrentLocation());
                                 driverWithUser.setStatus(driver.getStatus());
-
-                                // Find the user with the same ID
                                 for (User u : allUsers) {
                                     if (u.getId().equals(driver.getId())) {
                                         driverWithUser.setUsers(u);
@@ -160,11 +152,14 @@ public class DriverRepo extends BaseRepo
         });
     }
 
-
-    // --- Update Driver Location ---
+    /**
+     * Task: updates the GPS location and sets status to 'available' for a driver.
+     * Called every step of the car animation in DriverMapFragment.
+     * Input: driverId (String), lat (double), lng (double), callBack
+     * Output: true via callback if updated successfully
+     */
     public void updateDriverLocation(String driverId, double lat, double lng, RepoCallback<Boolean> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers?id=eq." + driverId;
-
         String json = "{\"current_lat\":" + lat + ",\"current_lng\":" + lng + ",\"status\":\"available\"}";
         RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
 
@@ -179,6 +174,7 @@ public class DriverRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) { callBack.onError(e); }
+
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 if (response.isSuccessful()) callBack.onSuccess(true);
@@ -187,7 +183,12 @@ public class DriverRepo extends BaseRepo
         });
     }
 
-    // --- Get Driver's current lat/lng ---
+    /**
+     * Task: fetches the current GPS coordinates of a specific driver from Supabase.
+     * Used by BlankFragment2 (passenger map) to show driver's real-time position.
+     * Input: driverId (String), callBack (RepoCallback<double[]>)
+     * Output: double[] {lat, lng} via callback, or Exception if driver not found
+     */
     public void getDriverLocation(String driverId, RepoCallback<double[]> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers?id=eq." + driverId;
         Request request = new Request.Builder()
@@ -200,11 +201,12 @@ public class DriverRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) { callBack.onError(e); }
+
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (!response.isSuccessful()) { callBack.onError(new Exception("HTTP " + response.code())); return; }
                 String json = response.body().string();
-                java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<Driver>>(){}.getType();
+                java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<Driver>>() {}.getType();
                 java.util.List<Driver> drivers = gson.fromJson(json, listType);
                 if (drivers != null && !drivers.isEmpty()) {
                     Driver d = drivers.get(0);
@@ -218,7 +220,12 @@ public class DriverRepo extends BaseRepo
         });
     }
 
-    // --- Get Available Drivers ---
+    /**
+     * Task: fetches all drivers with status 'available' and joins with user data.
+     * Used by BlankFragment3 to show the passenger a list of available drivers.
+     * Input: callBack (RepoCallback<List<DriverWithUser>>)
+     * Output: List<DriverWithUser> of available drivers with name and image via callback
+     */
     public void getAvailableDrivers(RepoCallback<List<DriverWithUser>> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers?status=eq.available";
         Request request = new Request.Builder()
@@ -236,10 +243,9 @@ public class DriverRepo extends BaseRepo
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (!response.isSuccessful()) { callBack.onError(new Exception("Failed: " + response.code())); return; }
                 String json = response.body().string();
-                Type listType = new TypeToken<List<Driver>>(){}.getType();
+                Type listType = new TypeToken<List<Driver>>() {}.getType();
                 List<Driver> drivers = gson.fromJson(json, listType);
 
-                // fetch users to join
                 String userUrl = SUPABASE_URL + "/rest/v1/users";
                 Request userRequest = new Request.Builder()
                         .url(userUrl)
@@ -250,11 +256,12 @@ public class DriverRepo extends BaseRepo
                 client.newCall(userRequest).enqueue(new Callback() {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull IOException e) { callBack.onError(e); }
+
                     @Override
                     public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                         if (!response.isSuccessful()) { callBack.onError(new Exception("Failed users")); return; }
                         String usersJson = response.body().string();
-                        Type usersType = new TypeToken<List<User>>(){}.getType();
+                        Type usersType = new TypeToken<List<User>>() {}.getType();
                         List<User> allUsers = gson.fromJson(usersJson, usersType);
 
                         List<DriverWithUser> result = new ArrayList<>();
@@ -276,6 +283,12 @@ public class DriverRepo extends BaseRepo
             }
         });
     }
+
+    /**
+     * Task: updates driver details (location, status) in Supabase.
+     * Input: driver (Driver) — driver object with updated fields; callBack
+     * Output: updated Driver via callback, or Exception on failure
+     */
     public void updateDriver(Driver driver, RepoCallback<Driver> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers?id=eq." + driver.getId();
         String json = gson.toJson(driver);
@@ -293,19 +306,27 @@ public class DriverRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) { callBack.onError(e); }
+
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     String jsonResp = response.body().string();
-                    Type listType = new TypeToken<List<Driver>>(){}.getType();
+                    Type listType = new TypeToken<List<Driver>>() {}.getType();
                     List<Driver> updated = gson.fromJson(jsonResp, listType);
                     callBack.onSuccess(updated.get(0));
-                } else { callBack.onError(new Exception("Update failed")); }
+                } else {
+                    callBack.onError(new Exception("Update failed"));
+                }
             }
         });
     }
 
-    // --- ADDED: Delete Method ---
+    /**
+     * Task: deletes a driver record from the Supabase 'drivers' table.
+     * Note: also call UserRepo.deleteUser() to fully remove the driver from the system.
+     * Input: driver (Driver), callBack (RepoCallback<Boolean>)
+     * Output: true via callback if deleted successfully
+     */
     public void deleteDriver(Driver driver, RepoCallback<Boolean> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers?id=eq." + driver.getId();
         Request request = new Request.Builder()
@@ -318,6 +339,7 @@ public class DriverRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) { callBack.onError(e); }
+
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 if (response.isSuccessful()) callBack.onSuccess(true);
