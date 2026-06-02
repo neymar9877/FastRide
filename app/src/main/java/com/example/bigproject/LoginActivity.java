@@ -110,6 +110,23 @@ public class LoginActivity extends AppCompatActivity {
                         public void onSuccess(User result) {
                             runOnUiThread(() -> {
                                 sp.edit().putString("userId", result.getId()).apply();
+
+                                // If role is driver, also add to drivers table
+                                if (role.equals("driver")) {
+                                    DriverRepo driverRepo = new DriverRepo();
+                                    Driver newDriver = new Driver(result.getId(), "", "available");
+                                    driverRepo.addUser(newDriver, new BaseRepo.RepoCallback<Driver>() {
+                                        @Override
+                                        public void onSuccess(Driver d) {
+                                            Log.d("SignUp", "Driver added to drivers table");
+                                        }
+                                        @Override
+                                        public void onError(Exception e) {
+                                            Log.e("SignUp", "Failed to add to drivers table: " + e.getMessage());
+                                        }
+                                    });
+                                }
+
                                 Toast.makeText(LoginActivity.this,
                                         "Account created! Please login.", Toast.LENGTH_SHORT).show();
                                 etUserName.setText(name);
