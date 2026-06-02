@@ -1,6 +1,5 @@
 package com.example.bigproject;
 
-
 import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -9,31 +8,29 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.List;
 import android.os.Handler;
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+/**
+ * Repository class for all operations on the 'rides' table in Supabase.
+ * All methods are static — no instantiation needed.
+ * Handles creating rides, fetching by ID or driver, and updating status.
+ */
+public class RideRepo extends BaseRepo {
 
-public class RideRepo extends BaseRepo
-{
-
-
-    // 1️⃣ Passenger creates a ride request
+    /**
+     * Task: creates a new ride request in Supabase when a passenger confirms a driver.
+     * Input: ride (RideRequest) — the ride to create; callback (RepoCallback<RideRequest>)
+     * Output: the created RideRequest with generated ID via callback
+     */
     public static void createRide(RideRequest ride, RepoCallback<RideRequest> callback) {
         String url = SUPABASE_URL + "/rest/v1/rides";
-
         String json = gson.toJson(ride);
-        RequestBody body = RequestBody.create(
-                json,
-                MediaType.parse("application/json")
-        );
-        Log.d("aloo", "enter the func");
-
+        RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
 
         Request request = new Request.Builder()
                 .url(url)
@@ -43,30 +40,20 @@ public class RideRepo extends BaseRepo
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Prefer", "return=representation")
                 .build();
-        Log.d("aloo", "after the request design");
+
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.d("aloo", "on fail!!", e);
                 callback.onError(e);
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-
                 if (response.isSuccessful()) {
                     String jsonResponse = response.body().string();
-                    Log.d("RideRepoCheckLog", "Create ride response = " + jsonResponse);
-
-                    Type listType = new TypeToken<List<RideRequest>>(){}.getType();
+                    Type listType = new TypeToken<List<RideRequest>>() {}.getType();
                     List<RideRequest> rides = gson.fromJson(jsonResponse, listType);
-                    RideRequest createdRide = rides.get(0);
-
-                    // go back to the main thread
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        callback.onSuccess(createdRide);
-                    });
-
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(rides.get(0)));
                 } else {
                     callback.onError(new Exception("Create ride failed"));
                 }
@@ -74,9 +61,14 @@ public class RideRepo extends BaseRepo
         });
     }
 
-    public static void getRideById(String rideId, RepoCallback<RideRequest> callback){
+    /**
+     * Task: fetches a single ride from Supabase by its unique ID.
+     * Used by passenger to poll for status updates and by driver to load ride details.
+     * Input: rideId (String), callback (RepoCallback<RideRequest>)
+     * Output: RideRequest via callback if found, Exception if not found
+     */
+    public static void getRideById(String rideId, RepoCallback<RideRequest> callback) {
         String url = SUPABASE_URL + "/rest/v1/rides?id=eq." + rideId;
-
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -87,33 +79,25 @@ public class RideRepo extends BaseRepo
 
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                callback.onError(e);
-            }
+            public void onFailure(@NonNull Call call, @NonNull IOException e) { callback.onError(e); }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    callback.onError(new Exception("HTTP " + response.code()));
-                    return;
-                }
+                if (!response.isSuccessful()) { callback.onError(new Exception("HTTP " + response.code())); return; }
                 String json = response.body().string();
                 RideRequest[] rides = gson.fromJson(json, RideRequest[].class);
-
-                if (rides.length == 0) {
-                    callback.onError(new Exception("Ride not found"));
-                    return;
-                }
+                if (rides.length == 0) { callback.onError(new Exception("Ride not found")); return; }
                 callback.onSuccess(rides[0]);
             }
-
         });
     }
 
-
-
-
-    // Driver sees pending requests for him
+    /**
+     * Task: fetches all pending ride requests assigned to a specific driver.
+     * Called every 5 seconds by DriverHomeFragment to check for new requests.
+     * Input: driverId (String), callback (RepoCallback<List<RideRequest>>)
+     * Output: List<RideRequest> with status="requested" for the driver via callback
+     */
     public static void getPendingRidesForDriver(String driverId, BaseRepo.RepoCallback<List<RideRequest>> callback) {
         String url = SUPABASE_URL + "/rest/v1/rides?driver_id=eq." + driverId + "&status=eq.requested";
         Request request = new Request.Builder()
@@ -126,18 +110,24 @@ public class RideRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) { callback.onError(e); }
+
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (!response.isSuccessful()) { callback.onError(new Exception("HTTP " + response.code())); return; }
                 String json = response.body().string();
-                Type listType = new com.google.gson.reflect.TypeToken<List<RideRequest>>(){}.getType();
+                Type listType = new TypeToken<List<RideRequest>>() {}.getType();
                 List<RideRequest> rides = gson.fromJson(json, listType);
                 new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(rides));
             }
         });
     }
 
-    // Update ride status (accepted / declined / on_the_way / finished)
+    /**
+     * Task: updates the status of a ride in Supabase.
+     * Used throughout the ride lifecycle: accepted, on_the_way, finished, declined.
+     * Input: rideId (String), status (String), callback (RepoCallback<Boolean>)
+     * Output: true via callback if updated successfully, Exception on failure
+     */
     public static void updateRideStatus(String rideId, String status, BaseRepo.RepoCallback<Boolean> callback) {
         String url = SUPABASE_URL + "/rest/v1/rides?id=eq." + rideId;
         String json = "{\"status\":\"" + status + "\"}";
@@ -154,6 +144,7 @@ public class RideRepo extends BaseRepo
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) { callback.onError(e); }
+
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 if (response.isSuccessful()) new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(true));
@@ -161,72 +152,4 @@ public class RideRepo extends BaseRepo
             }
         });
     }
-
-    // Driver sees pending requests (old commented code)
-//        public void getPendingRidesForDriver(
-//                String driverId,
-//                RideCallback<List<RideRequest>> callback
-//        ) {
-//            String url = SUPABASE_URL +
-//                    "/rest/v1/rides?driver_id=eq." + driverId +
-//                    "&status=eq.requested";
-//
-//            Request request = new Request.Builder()
-//                    .url(url)
-//                    .addHeader("apikey", SUPABASE_KEY)
-//                    .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
-//                    .addHeader("Accept", "application/json")
-//                    .build();
-//
-//            client.newCall(request).enqueue(new Callback() {
-//                @Override
-//                public void onFailure(@NonNull Call call, @NonNull IOException e) {
-//                    callback.onError(e);
-//                }
-//
-//                @Override
-//                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-//                    if (response.isSuccessful()) {
-//                        String json = response.body().string();
-//                        Type listType = new TypeToken<List<RideRequest>>(){}.getType();
-//                        List<RideRequest> rides = gson.fromJson(json, listType);
-//                        callback.onSuccess(rides);
-//                    } else {
-//                        callback.onError(new Exception("Fetch failed"));
-//                    }
-//                }
-//            });
-//        }
-//
-//        // Driver accepts ride
-//        public void acceptRide(String rideId, RideCallback<Void> callback) {
-//            String url = SUPABASE_URL + "/rest/v1/rides?id=eq." + rideId;
-//
-//            RequestBody body = RequestBody.create(
-//                    "{\"status\":\"accepted\"}",
-//                    MediaType.parse("application/json")
-//            );
-//
-//            Request request = new Request.Builder()
-//                    .url(url)
-//                    .patch(body)
-//                    .addHeader("apikey", SUPABASE_KEY)
-//                    .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
-//                    .addHeader("Content-Type", "application/json")
-//                    .build();
-//
-//            client.newCall(request).enqueue(new Callback() {
-//                @Override
-//                public void onFailure(@NonNull Call call, @NonNull IOException e) {
-//                    callback.onError(e);
-//                }
-//
-//                @Override
-//                public void onResponse(@NonNull Call call, @NonNull Response response) {
-//                    callback.onSuccess(null);
-//                }
-//            });
-//        }
-//
 }
-
