@@ -1,5 +1,12 @@
 package com.example.bigproject;
 
+/**
+ * Helper model class that combines Driver and User data.
+ * Used when displaying driver lists to passengers or admins,
+ * where both driver-specific fields (location, status) and
+ * user fields (name, image) are needed together.
+ * Also holds distanceKm which is calculated client-side, not stored in DB.
+ */
 public class DriverWithUser {
 
     private String id;
@@ -10,6 +17,7 @@ public class DriverWithUser {
     private double current_lng;
     private double distanceKm = -1; // calculated client-side, not stored in DB
 
+    /** Task: empty constructor required for manual instantiation. */
     public DriverWithUser() {}
 
     public void setId(String id) { this.id = id; }
@@ -18,6 +26,12 @@ public class DriverWithUser {
     public void setUsers(User users) { this.users = users; }
     public void setCurrentLat(double current_lat) { this.current_lat = current_lat; }
     public void setCurrentLng(double current_lng) { this.current_lng = current_lng; }
+
+    /**
+     * Task: sets the calculated distance in kilometers from passenger to this driver.
+     * Input: distanceKm (double) — distance calculated using Location.distanceBetween()
+     * Output: none
+     */
     public void setDistanceKm(double distanceKm) { this.distanceKm = distanceKm; }
 
     public String getId() { return id; }
@@ -28,6 +42,11 @@ public class DriverWithUser {
     public double getCurrentLng() { return current_lng; }
     public double getDistanceKm() { return distanceKm; }
 
+    /**
+     * Task: converts this DriverWithUser to a plain Driver object.
+     * Input: none
+     * Output: Driver instance with id, location, status, lat, lng
+     */
     public Driver toDriver() {
         return new Driver(this.id, this.current_location, this.status, this.current_lat, this.current_lng);
     }
