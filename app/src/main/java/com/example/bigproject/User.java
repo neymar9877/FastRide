@@ -1,16 +1,27 @@
 package com.example.bigproject;
 
+/**
+ * Model class representing a user in the system.
+ * A user can be a passenger, driver, or admin.
+ * Corresponds to the 'users' table in Supabase.
+ */
 public class User {
     private String id;
     private String UserName;
     private String password;
     private String phone;
     private String email;
-    private String role; // 'passenger' || 'driver' || 'manager'
+    private String role; // 'passenger' || 'driver' || 'admin'
     private String image;
 
+    /** Task: empty constructor required by Gson for deserialization. */
     public User() {}
 
+    /**
+     * Task: constructs a fully initialized User object.
+     * Input: id, UserName, password, email, phone, imageUrl, role
+     * Output: a User instance with all fields set
+     */
     public User(String id, String UserName, String password, String email, String phone, String imageUrl, String role) {
         this.id = id;
         this.UserName = UserName;
@@ -20,6 +31,7 @@ public class User {
         this.role = role;
         this.image = imageUrl;
     }
+
 
     //////////////////////////////////
     //           GETTERS            //
