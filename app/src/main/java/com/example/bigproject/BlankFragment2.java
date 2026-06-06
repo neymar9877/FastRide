@@ -53,12 +53,18 @@ public class BlankFragment2 extends Fragment {
 
     public BlankFragment2() {}
 
+    // Task: Inflates the fragment layout representing the passenger's live map view.
+    // Input: inflater (LayoutInflater), container (ViewGroup), savedInstanceState (Bundle)
+    // Output: View
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_blank2, container, false);
     }
 
+    // Task: Binds UI maps components, configures map touches, retrieves the active ride ID from shared storage, and initiates the data loading process.
+    // Input: view (View), savedInstanceState (Bundle)
+    // Output: None
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -80,7 +86,9 @@ public class BlankFragment2 extends Fragment {
         }
     }
 
-    // Step 1: load ride data, then start polling for acceptance
+    // Task: Loads ride parameters from the repository, focuses the map camera on the pickup coordinates, and determines whether to immediately show the route or wait for acceptance.
+    // Input: rideId (String)
+    // Output: None
     private void loadRideAndWait(String rideId) {
         RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
             @Override
@@ -110,7 +118,9 @@ public class BlankFragment2 extends Fragment {
         });
     }
 
-    // Step 2: poll every 3 seconds until driver accepts
+    // Task: Runs a background loop that queries the database every 3 seconds to detect when a driver accepts the passenger's request.
+    // Input: rideId (String)
+    // Output: None
     private void startPollingForAcceptance(String rideId) {
         pollRunnable = new Runnable() {
             @Override
@@ -146,7 +156,9 @@ public class BlankFragment2 extends Fragment {
         pollHandler.post(pollRunnable);
     }
 
-    // Phase 1: driver going to pickup — fetch driver location and show route
+    // Task: Sets the screen state to the pickup phase, fetches the driver's current coordinates, and plots the route toward the passenger.
+    // Input: ride (RideRequest)
+    // Output: None
     private void startPhase1(RideRequest ride) {
         currentPhase = Phase.PICKUP;
         tvStatus.setText("🚗 Driver is on the way to pick you up!");
@@ -173,7 +185,9 @@ public class BlankFragment2 extends Fragment {
         });
     }
 
-    // Phase 2: driving to destination
+    // Task: Transitions the application state to the dropoff phase and updates the map to track the route from the pickup point to the destination.
+    // Input: None
+    // Output: None
     private void startPhase2() {
         if (!isAdded() || currentRide == null) return;
         currentPhase = Phase.DROPOFF;
@@ -185,7 +199,9 @@ public class BlankFragment2 extends Fragment {
         );
     }
 
-    // Same showRoute as DriverMapFragment
+    // Task: Adjusts map perspective, positions the starting and ending location markers, and calls the routing calculations.
+    // Input: fromLat (double), fromLng (double), toLat (double), toLng (double), fromTitle (String), toTitle (String)
+    // Output: None
     private void showRoute(double fromLat, double fromLng,
                            double toLat, double toLng,
                            String fromTitle, String toTitle) {
@@ -216,7 +232,9 @@ public class BlankFragment2 extends Fragment {
         drawRoute(fromPoint, toPoint);
     }
 
-    // Same drawRoute as DriverMapFragment
+    // Task: Calculates the real road route using an asynchronous OSRM road network threat, instantiates colored polylines, and forwards path points to the vehicle animator.
+    // Input: start (GeoPoint), end (GeoPoint)
+    // Output: None
     private void drawRoute(GeoPoint start, GeoPoint end) {
         if (routeOverlay != null) mapView.getOverlays().remove(routeOverlay);
         if (pastRouteOverlay != null) mapView.getOverlays().remove(pastRouteOverlay);
@@ -258,7 +276,9 @@ public class BlankFragment2 extends Fragment {
         }).start();
     }
 
-    // Same startCarAnimation as DriverMapFragment
+    // Task: Configures a vehicle map marker at the origin point and initiates a timed loop that steps the marker smoothly along the computed route.
+    // Input: routePoints (List<GeoPoint>)
+    // Output: None
     private void startCarAnimation(List<GeoPoint> routePoints) {
         if (carAnimator != null) carHandler.removeCallbacks(carAnimator);
         carPath = routePoints;
@@ -304,6 +324,9 @@ public class BlankFragment2 extends Fragment {
         carHandler.post(carAnimator);
     }
 
+    // Task: Evaluates the finished path; if pickup concludes, triggers the dropoff phase after 5 seconds; if dropoff concludes, deletes session files and redirects back to ordering.
+    // Input: None
+    // Output: None
     private void onAnimationFinished() {
         if (currentPhase == Phase.PICKUP) {
             tvStatus.setText("🎉 Driver arrived! Get in the car.");
@@ -334,12 +357,18 @@ public class BlankFragment2 extends Fragment {
         }
     }
 
+    // Task: Resumes map graphic rendering when the fragment shifts into the foreground.
+    // Input: None
+    // Output: None
     @Override
     public void onResume() {
         super.onResume();
         if (mapView != null) mapView.onResume();
     }
 
+    // Task: Suspends map operations and safely removes pending polling and animation runnables to avoid background resource consumption.
+    // Input: None
+    // Output: None
     @Override
     public void onPause() {
         super.onPause();

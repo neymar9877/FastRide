@@ -42,11 +42,17 @@ public class BlankFragment extends Fragment {
 
     public BlankFragment() {}
 
+    // Task: Inflates the fragment's layout from the XML file when creating the view hierarchy.
+    // Input: inflater (LayoutInflater), container (ViewGroup), savedInstanceState (Bundle)
+    // Output: View
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_blank, container, false);
     }
 
+    // Task: Initializes UI elements, configures the RecyclerView adapter, triggers data fetching, and attaches swipe-to-action touch helpers.
+    // Input: view (View), savedInstanceState (Bundle)
+    // Output: None
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -97,6 +103,9 @@ public class BlankFragment extends Fragment {
         }).attachToRecyclerView(recyclerRides);
     }
 
+    // Task: Requests the combined driver and user dataset from the repository and securely posts updates back to the UI main thread.
+    // Input: None
+    // Output: None
     public void getUsers() {
         driverRepo.getDriversWithUsers(new BaseRepo.RepoCallback<List<DriverWithUser>>() {
             @Override
@@ -117,6 +126,9 @@ public class BlankFragment extends Fragment {
         });
     }
 
+    // Task: Opens an AlertDialog to create a new driver record, captures input location/status fields, and submits it to the repository.
+    // Input: None
+    // Output: None
     private void showAddRideDialog() {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_ride, null);
         EditText etLocation = dialogView.findViewById(R.id.etCurrentLocation);
@@ -154,6 +166,9 @@ public class BlankFragment extends Fragment {
                 .show();
     }
 
+    // Task: Displays a dialog populated with a selected driver's current status and location, allowing edits to be saved back to the database.
+    // Input: driver (DriverWithUser), position (int)
+    // Output: None
     private void showUpdateRideDialog(DriverWithUser driver, int position) {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_ride, null);
         EditText etLocation = dialogView.findViewById(R.id.etCurrentLocation);
@@ -177,6 +192,9 @@ public class BlankFragment extends Fragment {
                 .show();
     }
 
+    // Task: Fires an asynchronous repository call to apply updated location and status properties to an existing driver entry inside Supabase.
+    // Input: d (Driver), pos (int)
+    // Output: None
     private void updateRideInSupabase(Driver d, int pos) {
         driverRepo.updateDriver(d, new DriverRepo.RepoCallback<Driver>() {
             @Override
@@ -190,6 +208,9 @@ public class BlankFragment extends Fragment {
         });
     }
 
+    // Task: Temporarily detaches a driver item from the list, prompting a Snackbar notice with an UNDO hook; deletes permanently if dismissed.
+    // Input: driver (DriverWithUser), position (int)
+    // Output: None
     private void deleteRide(DriverWithUser driver, int position) {
         DriverWithUser deletedItem = driversList.remove(position);
         adapter.notifyItemRemoved(position);
@@ -210,6 +231,9 @@ public class BlankFragment extends Fragment {
                 }).show();
     }
 
+    // Task: Instructs the repository layer to perform a remote delete request on the designated driver record in Supabase.
+    // Input: d (Driver)
+    // Output: None
     private void deleteRideFromSupabase(Driver d) {
         driverRepo.deleteDriver(d, new DriverRepo.RepoCallback<Boolean>() {
             @Override

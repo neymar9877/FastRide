@@ -22,11 +22,11 @@ import java.util.List;
 
 public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder> {
 
+    // ממשק (Interface) להגדרת פעולות אינטראקטיביות על פריטי הרשימה (עריכה, מחיקה או לחיצה רגילה)
     public interface OnItemActionListener {
         void onEdit(DriverWithUser driver, int position);
         void onDelete(DriverWithUser driver, int position);
         void onClick(DriverWithUser driver, int position);
-
     }
 
     private List<DriverWithUser> data;
@@ -37,6 +37,9 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
         this.listener = listener;
     }
 
+    // Task: Inflates the XML layout representing a single driver item card inside the list.
+    // Input: parent (ViewGroup), viewType (int)
+    // Output: RideViewHolder
     @NonNull
     @Override
     public RideViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -44,47 +47,57 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
         return new RideViewHolder(view);
     }
 
+    // Task: Binds consolidated driver and user row details to the UI controls, implements image load error fallbacks, and hooks item view click listeners.
+    // Input: holder (RideViewHolder), position (int)
+    // Output: None
     @Override
     public void onBindViewHolder(@NonNull RideViewHolder holder, int position) {
         DriverWithUser driver = data.get(position);
 
-        // Username from USERS table
+        // הצגת שם המשתמש השמור בטבלת המשתמשים (Users)
         holder.txtDriver.setText(driver.getUsers().getUserName());
 
-        // Driver fields from DRIVERS table
+        // הצגת נתוני הנהג השמורים בטבלת הנהגים (Drivers)
         holder.txtDestination.setText(driver.getCurrentLocation());
         holder.txtStatus.setText(driver.getStatus());
 
-
+        // טעינת תמונת הפרופיל של הנהג בצורה אסינכרונית עם טיפול בשגיאות טעינה
         Glide.with(holder.imgRide.getContext())
                 .load(driver.getUsers().getImageUrl())
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                        // הדפסת שגיאה ל-Logcat במידה והקישור לתמונה שבור או שאין חיבור לרשת
                         Log.e("ImageLoad", "Failed to load image for driver: "
                                 + driver.getUsers().getUserName() + " → showing default");
+
+                        // הצגת תמונת רכב כברירת מחדל במקרה של כישלון
                         holder.imgRide.setImageResource(R.drawable.baseline_directions_car_24);
-                        return true;
+                        return true; // החזרת true מסמנת ל-Glide שטיפלנו בשגיאה בעצמנו
                     }
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                        return false;
+                        return false; // החזרת false מאפשרת ל-Glide להמשיך ולהציג את התמונה כרגיל
                     }
                 })
-                .placeholder(R.drawable.baseline_directions_car_24)
-                .circleCrop()
+                .placeholder(R.drawable.baseline_directions_car_24) // תמונה זמנית עד לסיום הטעינה
+                .circleCrop() // עיגול פינות התמונה
                 .into(holder.imgRide);
 
+        // הגדרת מאזין ללחיצה על כל שורת נהג ברשימה
         holder.itemView.setOnClickListener(v -> listener.onClick(driver, position));
     }
 
-
+    // Task: Returns the total count of driver entries populated inside the current data collection source list.
+    // Input: None
+    // Output: int
     @Override
     public int getItemCount() {
         return data.size();
     }
 
+    // מחלקת ViewHolder המחזיקה הפניות (References) לרכיבי ה-UI הוויזואליים של כל שורת נהג
     public static class RideViewHolder extends RecyclerView.ViewHolder {
         TextView txtDriver, txtDestination, txtStatus;
         ImageView imgRide;
@@ -98,4 +111,3 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
         }
     }
 }
-

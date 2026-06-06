@@ -37,6 +37,7 @@ public class LoginActivity extends AppCompatActivity {
 
     String deafultImageUrl = "https://img.freepik.com/premium-vector/default-male-user-profile-icon-vector-illustration_276184-168.jpg";
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +71,9 @@ public class LoginActivity extends AppCompatActivity {
         btnSignUp.setOnClickListener(v -> showSignUpDialog());
     }
 
+    // Task: Inflates and displays a custom dialog for user registration, handles validation, and updates both users and drivers databases.
+    // Input: None
+    // Output: None
     private void showSignUpDialog() {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_signup_details, null);
 
@@ -144,6 +148,9 @@ public class LoginActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Task: Checks SharedPreferences to see if "Remember Me" was enabled, and automatically logs in if credentials exist.
+    // Input: None
+    // Output: None
     private void checkIfFIrstRun(){
         boolean remember = sp.getBoolean("remember", false);
         if (!remember) return;
@@ -158,7 +165,10 @@ public class LoginActivity extends AppCompatActivity {
     }
 
 
-        public void handleLogin(String userName, String Password){
+    // Task: Fetches all users from database to validate credentials, manages session memory, and handles "Remember Me" logic.
+    // Input: userName (String), Password (String)
+    // Output: None
+    public void handleLogin(String userName, String Password){
         UserRepo repo = new UserRepo();
         UserRepo.getAllUsers(new UserRepo.RepoCallback<List<User>>() {
             @Override
@@ -198,13 +208,16 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    // Task: Redirects the user to the corresponding activity dashboard (Admin, Passenger, or Driver) based on their role.
+    // Input: role (String)
+    // Output: None
     public void switchScreen(String role) {
         Intent intent;
 
         switch (role) {
             case "admin":
-               intent = new Intent(LoginActivity.this, AdminActivity.class);
-               break;
+                intent = new Intent(LoginActivity.this, AdminActivity.class);
+                break;
 
             case "passenger":
                 intent = new Intent(LoginActivity.this, MainActivity.class);

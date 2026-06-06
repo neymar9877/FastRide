@@ -46,11 +46,17 @@ public class BlankFragment3 extends Fragment {
 
     public BlankFragment3() {}
 
+    // Task: Inflates the layout representing the passenger's ride ordering interface.
+    // Input: inflater (LayoutInflater), container (ViewGroup), savedInstanceState (Bundle)
+    // Output: View
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_blank3, container, false);
     }
 
+    // Task: Links layout XML components, configures the interactive driver selector adapter list, and binds functional click behaviors.
+    // Input: view (View), savedInstanceState (Bundle)
+    // Output: None
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -81,6 +87,9 @@ public class BlankFragment3 extends Fragment {
         btnLogout.setOnClickListener(v -> logout());
     }
 
+    // Task: Directs an immediate local query to fetch the current unique active passenger identifier string from SharedPreferences storage.
+    // Input: None
+    // Output: None
     private void loadPassengerId() {
         SharedPreferences sp = requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
 
@@ -91,6 +100,9 @@ public class BlankFragment3 extends Fragment {
         }
     }
 
+    // Task: Launches an isolated background worker thread to safely transform written locations into numerical map coordinates via a geocoding process.
+    // Input: None
+    // Output: None
     private void findDrivers() {
         String pickupText = etPickupAddress.getText().toString().trim();
         String dropText = etDropAddress.getText().toString().trim();
@@ -123,6 +135,9 @@ public class BlankFragment3 extends Fragment {
         }).start();
     }
 
+    // Task: Fetches online drivers, runs mathematical calculations to find the distances between drivers and the pickup point, sorts them ascendingly, and populates the view list.
+    // Input: None
+    // Output: None
     private void fetchAvailableDrivers() {
         DriverRepo driverRepo = new DriverRepo();
         driverRepo.getAvailableDrivers(new BaseRepo.RepoCallback<List<DriverWithUser>>() {
@@ -181,6 +196,9 @@ public class BlankFragment3 extends Fragment {
         });
     }
 
+    // Task: Packages location, passenger, and driver metadata into a new RideRequest instance, publishes it to Supabase, and commands MainActivity to begin polling updates.
+    // Input: None
+    // Output: None
     private void confirmRide() {
         if (selectedDriver == null) {
             Toast.makeText(getContext(), "Please select a driver first", Toast.LENGTH_SHORT).show();
@@ -237,6 +255,9 @@ public class BlankFragment3 extends Fragment {
         });
     }
 
+    // Task: Completely wipes all existing active user key records out of SharedPreferences and redirects the client device back onto LoginActivity.
+    // Input: None
+    // Output: None
     private void logout() {
         SharedPreferences sp = requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
         sp.edit().clear().apply();

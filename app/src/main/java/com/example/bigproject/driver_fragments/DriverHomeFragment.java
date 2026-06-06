@@ -52,6 +52,9 @@ public class DriverHomeFragment extends Fragment {
 
     public DriverHomeFragment() {}
 
+    // Task: Inflates the fragment layout representing the driver's job request dashboard.
+    // Input: inflater (LayoutInflater), container (ViewGroup), savedInstanceState (Bundle)
+    // Output: View
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -60,6 +63,9 @@ public class DriverHomeFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_driver_home, container, false);
     }
 
+    // Task: Binds XML elements, checks/requests location permissions, triggers the polling loop, and hooks swipe listeners (Left to Decline, Right to Accept) onto the list view.
+    // Input: view (View), savedInstanceState (Bundle)
+    // Output: None
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -115,6 +121,9 @@ public class DriverHomeFragment extends Fragment {
         }).attachToRecyclerView(recyclerRequests);
     }
 
+    // Task: Catches the asynchronous OS response for location requests; executes the database location update if granted, otherwise informs the user.
+    // Input: requestCode (int), permissions (String[]), grantResults (int[])
+    // Output: None
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
@@ -131,6 +140,9 @@ public class DriverHomeFragment extends Fragment {
         }
     }
 
+    // Task: Uses the Google FusedLocationProviderClient to fetch high-accuracy single GPS points and updates the driver's online coordinates in Supabase.
+    // Input: None
+    // Output: None
     private void saveLocationToSupabase() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
@@ -175,6 +187,9 @@ public class DriverHomeFragment extends Fragment {
         }
     }
 
+    // Task: Begins a repeating loop using a Handler that periodically runs a fetch commands queue every 5000 milliseconds.
+    // Input: None
+    // Output: None
     private void startPolling() {
         pollRunnable = new Runnable() {
             @Override
@@ -186,6 +201,9 @@ public class DriverHomeFragment extends Fragment {
         pollHandler.post(pollRunnable);
     }
 
+    // Task: Queries the ride repository for open, matching orders designated for this driver ID and alters UI warning labels based on results availability.
+    // Input: None
+    // Output: None
     private void fetchRideRequests() {
         if (driverId == null) return;
         RideRepo.getPendingRidesForDriver(driverId, new BaseRepo.RepoCallback<List<RideRequest>>() {
@@ -214,6 +232,9 @@ public class DriverHomeFragment extends Fragment {
         });
     }
 
+    // Task: Submits an asynchronous network request to set a ride's status to "accepted", saves the session ID locally, and signals DriverActivity to launch navigation.
+    // Input: ride (RideRequest), position (int)
+    // Output: None
     private void acceptRide(RideRequest ride, int position) {
         RideRepo.updateRideStatus(ride.getId(), "accepted", new BaseRepo.RepoCallback<Boolean>() {
             @Override
@@ -244,6 +265,9 @@ public class DriverHomeFragment extends Fragment {
         });
     }
 
+    // Task: Updates the specific ride ticket's state to "declined" inside the repository layer and cleans it from the active screen array.
+    // Input: ride (RideRequest), position (int)
+    // Output: None
     private void declineRide(RideRequest ride, int position) {
         RideRepo.updateRideStatus(ride.getId(), "declined", new BaseRepo.RepoCallback<Boolean>() {
             @Override
@@ -264,6 +288,9 @@ public class DriverHomeFragment extends Fragment {
         });
     }
 
+    // Task: Tears down and unregisters looping runnables when the fragment transitions out of focus to preserve processing loops.
+    // Input: None
+    // Output: None
     @Override
     public void onPause() {
         super.onPause();
@@ -271,6 +298,9 @@ public class DriverHomeFragment extends Fragment {
             pollHandler.removeCallbacks(pollRunnable);
     }
 
+    // Task: Automatic recovery callback that re-instantiates data-refresh polling tasks when the context goes active.
+    // Input: None
+    // Output: None
     @Override
     public void onResume() {
         super.onResume();

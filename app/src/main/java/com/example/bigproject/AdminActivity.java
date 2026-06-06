@@ -43,6 +43,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
 public class AdminActivity extends AppCompatActivity {
     private RecyclerView recyclerDrivers;
     private RideAdapter adapter;
@@ -114,9 +115,9 @@ public class AdminActivity extends AppCompatActivity {
         new ItemTouchHelper(new ItemTouchHelper.Callback() {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                    int swipeFlags = ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
-                    return makeMovementFlags(0, swipeFlags);
-                }
+                int swipeFlags = ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
+                return makeMovementFlags(0, swipeFlags);
+            }
 
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
@@ -141,6 +142,9 @@ public class AdminActivity extends AppCompatActivity {
 
     }
 
+    // Task: Asynchronously fetches all drivers along with their user profile details from the repository and populates the RecyclerView.
+    // Input: None
+    // Output: None
     public void getDrivers(){
         DriverRepo repo = new DriverRepo();
         repo.getDriversWithUsers(new BaseRepo.RepoCallback<List<DriverWithUser>>() {
@@ -171,6 +175,9 @@ public class AdminActivity extends AppCompatActivity {
 
     }
 
+    // Task: Inflates and shows a dialog to register a new driver by adding a User record first and then creating the matching Driver record linked by ID.
+    // Input: None
+    // Output: None
     private void showAddDriverDialog() {
         View dialogView = LayoutInflater.from(AdminActivity.this)
                 .inflate(R.layout.dialog_add_driver, null);
@@ -235,6 +242,9 @@ public class AdminActivity extends AppCompatActivity {
     }
 
 
+    // Task: Displays a pre-filled dialog allowing the admin to update an existing driver's email, phone, and image URL properties.
+    // Input: driver (DriverWithUser), position (int)
+    // Output: None
     private void showUpdateDriverDialog(DriverWithUser driver, int position) {
         View dialogView = LayoutInflater.from(AdminActivity.this)
                 .inflate(R.layout.dialog_update_driver, null);
@@ -281,6 +291,9 @@ public class AdminActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Task: Sends an HTTP PATCH network request to update specific data attributes of a driver inside the remote Supabase database.
+    // Input: driver (Driver)
+    // Output: None
     private void updateDriverInSupabase(Driver driver) {
         String url = DriverRepo.SUPABASE_URL + "/rest/v1/drivers?id=eq." + driver.getId();
 
@@ -316,6 +329,9 @@ public class AdminActivity extends AppCompatActivity {
         });
     }
 
+    // Task: Temporarily removes a driver from the local view list with a Snackbar option to UNDO; if dismissed, finalizes the irreversible deletion from database tables.
+    // Input: driver (DriverWithUser), position (int)
+    // Output: None
     private void deleteDriver(DriverWithUser driver, int position) {
         DriverWithUser deleted = driversList.remove(position);
         adapter.notifyItemRemoved(position);
@@ -345,6 +361,9 @@ public class AdminActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Task: Executes an asynchronous HTTP DELETE backend call to wipe a driver record completely out of the Supabase platform.
+    // Input: driver (Driver)
+    // Output: None
     private void deleteDriverFromSupabase(Driver driver) {
         String url = DriverRepo.SUPABASE_URL + "/rest/v1/drivers?id=eq." + driver.getId();
 

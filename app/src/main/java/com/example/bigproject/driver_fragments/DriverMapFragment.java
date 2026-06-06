@@ -65,6 +65,9 @@ public class DriverMapFragment extends Fragment {
 
     public DriverMapFragment() {}
 
+    // Task: Inflates the fragment layout representing the driver's active transit navigation map view.
+    // Input: inflater (LayoutInflater), container (ViewGroup), savedInstanceState (Bundle)
+    // Output: View
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -73,6 +76,9 @@ public class DriverMapFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_driver_map, container, false);
     }
 
+    // Task: Initializes UI elements, prepares mapping engines, pulls session metadata, and boots automatic positioning updates if a trip is ongoing.
+    // Input: view (View), savedInstanceState (Bundle)
+    // Output: None
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -96,7 +102,9 @@ public class DriverMapFragment extends Fragment {
         }
     }
 
-    // FIX 2: start sending GPS to Supabase every 2 seconds
+    // Task: Establishes a recurring Google LocationRequest checking interval tracking physical device motion every 2000 milliseconds to stream coordinates to Supabase.
+    // Input: None
+    // Output: None
     private void startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return;
@@ -128,12 +136,18 @@ public class DriverMapFragment extends Fragment {
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
     }
 
+    // Task: Safe tear-down function that commands the FusedLocationProviderClient to disconnect active callbacks and stop GPS tracking.
+    // Input: None
+    // Output: None
     private void stopLocationUpdates() {
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
     }
 
+    // Task: Loads trip records via RideRepo, detects the driver's origin coordinates, and initiates the pickup phase layout mapping.
+    // Input: rideId (String)
+    // Output: None
     private void loadRideAndStart(String rideId) {
         RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
             @Override
@@ -167,6 +181,9 @@ public class DriverMapFragment extends Fragment {
         });
     }
 
+    // Task: Configures camera focus zoom details, handles source/target pin allocations, and sends locations forward to overlay calculations.
+    // Input: fromLat (double), fromLng (double), toLat (double), toLng (double), fromTitle (String), toTitle (String)
+    // Output: None
     private void showRoute(double fromLat, double fromLng,
                            double toLat, double toLng,
                            String fromTitle, String toTitle) {
@@ -197,6 +214,9 @@ public class DriverMapFragment extends Fragment {
         drawRoute(fromPoint, toPoint);
     }
 
+    // Task: Calculates actual routing data using an external thread worker via OSRMRoadManager, instantiates split polyline displays, and initializes the vehicle animator.
+    // Input: start (GeoPoint), end (GeoPoint)
+    // Output: None
     private void drawRoute(GeoPoint start, GeoPoint end) {
         if (routeOverlay != null) mapView.getOverlays().remove(routeOverlay);
         if (pastRouteOverlay != null) mapView.getOverlays().remove(pastRouteOverlay);
@@ -240,6 +260,9 @@ public class DriverMapFragment extends Fragment {
         }).start();
     }
 
+    // Task: Instantiates a car marker icon over the map canvas and fires a periodic thread loop that updates vehicle tracking positions and modifies past/future line metrics.
+    // Input: routePoints (List<GeoPoint>)
+    // Output: None
     private void startCarAnimation(List<GeoPoint> routePoints) {
         if (carAnimator != null) carHandler.removeCallbacks(carAnimator);
         carPath = routePoints;
@@ -294,6 +317,9 @@ public class DriverMapFragment extends Fragment {
         carHandler.post(carAnimator);
     }
 
+    // Task: Resolves route targets; updates ride status to "on_the_way" after pickup and paths to destination; flags trip as "finished" upon dropoff, cleaning storage keys and resetting view frames.
+    // Input: None
+    // Output: None
     private void onAnimationFinished() {
         if (currentPhase == Phase.PICKUP) {
             Toast.makeText(getContext(), "🎉 Arrived at pickup! Passenger boarded.", Toast.LENGTH_LONG).show();
@@ -347,12 +373,18 @@ public class DriverMapFragment extends Fragment {
         }
     }
 
+    // Task: Directs map canvas layers to re-activate processing threads when the view comes to the foreground.
+    // Input: None
+    // Output: None
     @Override
     public void onResume() {
         super.onResume();
         if (mapView != null) mapView.onResume();
     }
 
+    // Task: Forces map operations to freeze, unties looping background animators, and drops active hardware GPS listeners to avoid runtime memory leaks.
+    // Input: None
+    // Output: None
     @Override
     public void onPause() {
         super.onPause();

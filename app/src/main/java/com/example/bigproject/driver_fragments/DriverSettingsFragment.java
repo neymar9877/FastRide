@@ -34,6 +34,10 @@ public class DriverSettingsFragment extends Fragment {
     public DriverSettingsFragment() {
         // Required empty public constructor
     }
+
+    // Task: Inflates the fragment layout representing the driver's profile and system settings view screen.
+    // Input: inflater (LayoutInflater), container (ViewGroup), savedInstanceState (Bundle)
+    // Output: View
     @Nullable
     @Override
     public View onCreateView(
@@ -44,6 +48,9 @@ public class DriverSettingsFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_driver_settings, container, false);
     }
 
+    // Task: Binds UI dashboard click views and registers click listeners for the logout and profile update mechanisms.
+    // Input: view (View), savedInstanceState (Bundle)
+    // Output: None
     @SuppressLint("WrongViewCast")
     @Override
     public void onViewCreated(View view,Bundle savedInstanceState ) {
@@ -52,8 +59,6 @@ public class DriverSettingsFragment extends Fragment {
         logoutBtn = view.findViewById(R.id.logout_btn);
         updateProfileBtn = view.findViewById(R.id.update_profile_btn);
 
-
-
         logoutBtn.setOnClickListener(v -> showLogoutDialog());
 
         updateProfileBtn.setOnClickListener(v -> openUpdateProfile());
@@ -61,7 +66,9 @@ public class DriverSettingsFragment extends Fragment {
 
     // ================= UPDATE PROFILE =================
 
-
+    // Task: Retrieves the user token key from SharedPreferences and asynchronously requests user row profiles from UserRepo to display in the editor dialog.
+    // Input: None
+    // Output: None
     private void openUpdateProfile() {
         SharedPreferences sp =
                 requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
@@ -90,7 +97,9 @@ public class DriverSettingsFragment extends Fragment {
         });
     }
 
-
+    // Task: Constructs an AlertDialog containing pre-populated information entry forms, validates new strings inputs, and posts updates to Supabase.
+    // Input: user (User)
+    // Output: None
     private void showUpdateDialog(User user) {
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_update_driver, null);
@@ -144,6 +153,9 @@ public class DriverSettingsFragment extends Fragment {
     // ================= LOGOUT =================
     // ==========================================
 
+    // Task: Generates a verification warning box window confirming whether the active driver user explicitly desires to end the runtime instance.
+    // Input: None
+    // Output: None
     private void showLogoutDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Logout")
@@ -153,6 +165,9 @@ public class DriverSettingsFragment extends Fragment {
                 .show();
     }
 
+    // Task: Completely clears out compiled application key maps inside local SharedPreferences and triggers Intent routing to LoginActivity with full back-stack erasure.
+    // Input: None
+    // Output: None
     private void logout() {
         Context context = requireContext();
 

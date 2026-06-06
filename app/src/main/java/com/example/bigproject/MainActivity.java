@@ -28,7 +28,6 @@ import android.os.Looper;
 
 public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavBar;
-    private boolean mapUnlocked = false;
     private Handler rideStatusHandler = new Handler(Looper.getMainLooper());
     private Runnable rideStatusRunnable;
 
@@ -41,6 +40,9 @@ public class MainActivity extends AppCompatActivity {
         startPollingForRideAcceptance();
     }
 
+    // Task: Starts a background loop that repeatedly checks the database for updates on the active ride's status. If accepted, it moves the user to the map.
+    // Input: None
+    // Output: None
     public void startPollingForRideAcceptance() {
         SharedPreferences sp = getSharedPreferences("myPrefs", MODE_PRIVATE);
         String rideId = sp.getString("activeRideId", null);
@@ -79,6 +81,9 @@ public class MainActivity extends AppCompatActivity {
         rideStatusHandler.post(rideStatusRunnable);
     }
 
+    // Task: Cleans up the background Handler and stops the polling runnable when the activity is destroyed to prevent memory leaks.
+    // Input: None
+    // Output: None
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -87,6 +92,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Task: Initializes the bottom navigation bar, sets up the default landing fragment, and listens for navigation item selection.
+    // Input: None
+    // Output: None
     private void initNavigationBar() {
         bottomNavBar = findViewById(R.id.bottom_navigation);
         getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new BlankFragment3()).commit();
@@ -108,6 +116,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Task: Programmatically forces the navigation bar and the UI fragment container to switch back to the ride ordering screen.
+    // Input: None
+    // Output: None
     public void goToOrdersFragment() {
         getSupportFragmentManager()
                 .beginTransaction()
@@ -118,6 +129,9 @@ public class MainActivity extends AppCompatActivity {
 
     // ===================== RIDE ACCESS LOGIC =====================
 
+    // Task: Validates if the user has an active, accepted ride before allowing them to manually switch over to the map view.
+    // Input: None
+    // Output: None
     private void tryOpenMapFragment() {
         SharedPreferences sp = getSharedPreferences("myPrefs", MODE_PRIVATE);
         String rideId = sp.getString("activeRideId", null);
@@ -155,6 +169,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Task: Replaces the current fragment container view with the map fragment (BlankFragment2).
+    // Input: None
+    // Output: None
     private void openMapFragment() {
         getSupportFragmentManager()
                 .beginTransaction()

@@ -15,19 +15,23 @@ import java.util.List;
 
 public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapter.DriverViewHolder> {
 
+    // מאזין (Interface) המאפשר להעביר את אירוע בחירת הנהג לפרגמנט או לאקטיביטי המארח
     public interface OnDriverSelectedListener {
         void onDriverSelected(DriverWithUser driver);
     }
 
     private List<DriverWithUser> drivers;
     private OnDriverSelectedListener listener;
-    private int selectedPosition = -1;
+    private int selectedPosition = -1; // שמירת המיקום של הנהג שנבחר כרגע (1- ברירת מחדל: אף אחד)
 
     public DriverSelectAdapter(List<DriverWithUser> drivers, OnDriverSelectedListener listener) {
         this.drivers = drivers;
         this.listener = listener;
     }
 
+    // Task: Inflates the XML layout representing a single driver option row in the selection list.
+    // Input: parent (ViewGroup), viewType (int)
+    // Output: DriverViewHolder
     @NonNull
     @Override
     public DriverViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -36,27 +40,30 @@ public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapte
         return new DriverViewHolder(view);
     }
 
+    // Task: Binds driver details (name, profile picture, calculated ETA, and distance) to the UI components and updates the row selection highlights.
+    // Input: holder (DriverViewHolder), position (int)
+    // Output: None
     @Override
     public void onBindViewHolder(@NonNull DriverViewHolder holder, int position) {
         DriverWithUser driver = drivers.get(position);
 
-        // Name
+        // טעינת שם הנהג ותמונת הפרופיל שלו
         if (driver.getUsers() != null) {
             holder.tvName.setText(driver.getUsers().getUserName());
             Glide.with(holder.imgDriver.getContext())
                     .load(driver.getUsers().getImageUrl())
-                    .placeholder(R.drawable.baseline_directions_car_24)
-                    .circleCrop()
+                    .placeholder(R.drawable.baseline_directions_car_24) // תמונת ברירת מחדל עד שהתמונה נטענת
+                    .circleCrop() // חיתוך התמונה לצורה מעגלית
                     .into(holder.imgDriver);
         } else {
             holder.tvName.setText("Driver");
         }
 
-        // Distance
+        // חישוב והצגת מרחק וזמן הגעה משוער (ETA)
         double distKm = driver.getDistanceKm();
         if (distKm >= 0) {
             holder.tvDistance.setText(String.format("📍 %.1f km away", distKm));
-            // Rough ETA: assume 30 km/h in city
+            // חישוב זמנים משוער: הנחת עבודה של מהירות ממוצעת 30 קמ"ש בעיר
             int etaMinutes = (int) Math.ceil((distKm / 30.0) * 60);
             holder.tvEta.setText(String.format("⏱ ~%d min away", etaMinutes));
         } else {
@@ -64,23 +71,32 @@ public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapte
             holder.tvEta.setText("");
         }
 
-        // Highlight selected
+        // ניהול נראות ויזואלית עבור השורה שנבחרה
         boolean isSelected = (position == selectedPosition);
         holder.ivSelected.setVisibility(isSelected ? View.VISIBLE : View.GONE);
-        holder.itemView.setBackgroundColor(isSelected ? 0xFFE3F2FD : 0xFFFFFFFF);
+        holder.itemView.setBackgroundColor(isSelected ? 0xFFE3F2FD : 0xFFFFFFFF); // רקע כחלחל לנהג נבחר, לבן לאחרים
 
+        // האזנה ללחיצה על שורת נהג ועדכון המיקומים בהתאם
         holder.itemView.setOnClickListener(v -> {
             int prev = selectedPosition;
             selectedPosition = holder.getAdapterPosition();
+
+            // רענון השורה הקודמת והשורה החדשה שנבחרה כדי לעדכן את העיצוב שלהן
             notifyItemChanged(prev);
             notifyItemChanged(selectedPosition);
+
+            // הפעלת פונקציית הכלבק להעברת הנהג הנבחר
             listener.onDriverSelected(driver);
         });
     }
 
+    // Task: Returns the total number of driver items registered inside the bound data stream source list.
+    // Input: None
+    // Output: int
     @Override
     public int getItemCount() { return drivers.size(); }
 
+    // מחלקת ViewHolder המחזיקה הפניות (References) לרכיבי ה-UI של כל שורה ברשימה
     public static class DriverViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvDistance, tvEta;
         ImageView imgDriver, ivSelected;
