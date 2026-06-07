@@ -11,21 +11,7 @@ import com.example.bigproject.driver_fragments.DriverMapFragment;
 import com.example.bigproject.driver_fragments.DriverSettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-/**
- * Class Meaning and Contribution to the Application:
- * * 1. Root Container for Driver Workspace:
- * This Activity acts as the core controller and UI host for the entire driver experience.
- * Instead of spinning up multiple resource-heavy activities, it stays active and uses
- * a single container (`R.id.driver_fragment_container`) to seamlessly swap layout chunks.
- * * 2. Navigation State Management & Gatekeeping:
- * It coordinates the state transitions of a trip. By managing flags like `rideAccepted`,
- * it prevents illegal workflow transitions—ensuring a driver cannot access navigation tools
- * unless a passenger's request has been officially accepted.
- * * 3. Bidirectional Fragment Communication:
- * It acts as a central communication bridge. Other child sub-fragments (like Home or Map)
- * cast runtime status events back up to this activity, allowing the host to dynamically
- * alter structural properties like active bottom navigation selection.
- */
+
 public class DriverActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavBar;
