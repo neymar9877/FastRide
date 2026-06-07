@@ -40,7 +40,7 @@ public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapte
         return new DriverViewHolder(view);
     }
 
-    // Task: Binds driver details (name, profile picture, calculated ETA, and distance) to the UI components and updates the row selection highlights.
+    // Task: Binds driver details (name, profile picture, calculated ETA, driver Price, and distance) to the UI components and updates the row selection highlights.
     // Input: holder (DriverViewHolder), position (int)
     // Output: None
     @Override
@@ -63,12 +63,21 @@ public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapte
         double distKm = driver.getDistanceKm();
         if (distKm >= 0) {
             holder.tvDistance.setText(String.format("📍 %.1f km away", distKm));
-            // חישוב זמנים משוער: הנחת עבודה של מהירות ממוצעת 30 קמ"ש בעיר
+            // חישוב זמנים משוער: הנחה של מהירות ממוצעת 30 קמ"ש בעיר
             int etaMinutes = (int) Math.ceil((distKm / 30.0) * 60);
             holder.tvEta.setText(String.format("⏱ ~%d min away", etaMinutes));
+
+            // ===== מחיר נסיעה =====
+            // נוסחה: 10 שח תוספת אישית + 3.5 שח לכל ק"מ + 0.5 שח לכל דקת המתנה (ETA)
+            // זו נוסחה שמחקה תעריפי מונית ישראליים
+            double price = 10.0 + (distKm * 3.5) + (etaMinutes * 0.5);
+            holder.tvPrice.setText(String.format("💰 ~%.0f ₪", price));
+
+
         } else {
             holder.tvDistance.setText("Distance unknown");
             holder.tvEta.setText("");
+            holder.tvPrice.setText("");
         }
 
         // ניהול נראות ויזואלית עבור השורה שנבחרה
@@ -98,7 +107,7 @@ public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapte
 
     // מחלקת ViewHolder המחזיקה הפניות (References) לרכיבי ה-UI של כל שורה ברשימה
     public static class DriverViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvDistance, tvEta;
+        TextView tvName, tvDistance, tvEta, tvPrice;
         ImageView imgDriver, ivSelected;
 
         public DriverViewHolder(@NonNull View itemView) {
@@ -106,6 +115,7 @@ public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapte
             tvName = itemView.findViewById(R.id.tvDriverSelectName);
             tvDistance = itemView.findViewById(R.id.tvDriverSelectDistance);
             tvEta = itemView.findViewById(R.id.tvDriverSelectEta);
+            tvPrice    = itemView.findViewById(R.id.tvDriverSelectPrice);
             imgDriver = itemView.findViewById(R.id.imgDriverSelect);
             ivSelected = itemView.findViewById(R.id.ivSelected);
         }
