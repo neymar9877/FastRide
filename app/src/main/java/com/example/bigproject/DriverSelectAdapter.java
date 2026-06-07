@@ -67,10 +67,7 @@ public class DriverSelectAdapter extends RecyclerView.Adapter<DriverSelectAdapte
             int etaMinutes = (int) Math.ceil((distKm / 30.0) * 60);
             holder.tvEta.setText(String.format("⏱ ~%d min away", etaMinutes));
 
-            // ===== מחיר נסיעה =====
-            // נוסחה: 10 שח תוספת אישית + 3.5 שח לכל ק"מ + 0.5 שח לכל דקת המתנה (ETA)
-            // זו נוסחה שמחקה תעריפי מונית ישראליים
-            double price = 10.0 + (distKm * 3.5) + (etaMinutes * 0.5);
+            double price = driver.getEstimatedPrice();
             holder.tvPrice.setText(String.format("💰 ~%.0f ₪", price));
 
 

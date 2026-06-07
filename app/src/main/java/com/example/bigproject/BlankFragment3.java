@@ -153,20 +153,32 @@ public class BlankFragment3 extends Fragment {
                     // Calculate distance for each driver
                     for (DriverWithUser driver : result) {
                         if (driver.getCurrentLat() != 0 && driver.getCurrentLng() != 0) {
-                            float[] distResult = new float[1];
+                            float[] distToPickup  = new float[1];
                             Log.d("COORD_CHECK", "Pickup Lat/Lng: " + pickupLatLng.latitude + ", " + pickupLatLng.longitude);
                             Log.d("COORD_CHECK", "Driver Lat/Lng: " + driver.getCurrentLat() + ", " + driver.getCurrentLng());
                             Location.distanceBetween(
                                     pickupLatLng.latitude, pickupLatLng.longitude,
                                     driver.getCurrentLat(), driver.getCurrentLng(),
-                                    distResult
+                                    distToPickup
                             );
 
-                            double distanceInKm = distResult[0] / 1000.0;
-                            driver.setDistanceKm(distanceInKm);
+                            double distDriverToPickupKm  = distToPickup [0] / 1000.0;
+                            driver.setDistanceKm(distDriverToPickupKm );
+
+                            // ride's distance
+                            float[] distRide = new float[1];
+                            Location.distanceBetween(
+                                    pickupLatLng.latitude,  pickupLatLng.longitude,
+                                    dropLatLng.latitude,    dropLatLng.longitude,
+                                    distRide
+                            );
+                            double rideDistanceKm = distRide[0] / 1000.0;
+                            // formula for ride price
+                            double price = 10.0 + (rideDistanceKm * 3.5) + (distDriverToPickupKm * 1.5);
+                            driver.setEstimatedPrice(price);
 
                             // LOG INSIDE THE LOOP so you see every driver
-                            Log.d("DISTANCE_CHECK", "Driver: " + driver.toDriver().getId() + " | Dist: " + distanceInKm + " km");
+                            Log.d("DISTANCE_CHECK", "Driver: " + driver.toDriver().getId() + " | Dist: " + distDriverToPickupKm  + " km");
                         }
                     }
                     // Sort by distance

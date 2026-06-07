@@ -16,9 +16,14 @@ public class DriverWithUser {
     private double current_lat;
     private double current_lng;
     private double distanceKm = -1; // calculated client-side, not stored in DB
+    private double estimatedPrice = -1; // מחיר משוער לנסיעה, מחושב ב-BlankFragment3
 
     /** Task: empty constructor required for manual instantiation. */
     public DriverWithUser() {}
+
+    /**
+    * SETTERES
+    * */
 
     public void setId(String id) { this.id = id; }
     public void setCurrentLocation(String current_location) { this.current_location = current_location; }
@@ -26,6 +31,7 @@ public class DriverWithUser {
     public void setUsers(User users) { this.users = users; }
     public void setCurrentLat(double current_lat) { this.current_lat = current_lat; }
     public void setCurrentLng(double current_lng) { this.current_lng = current_lng; }
+    public void setEstimatedPrice(double estimatedPrice) { this.estimatedPrice = estimatedPrice; }
 
     /**
      * Task: sets the calculated distance in kilometers from passenger to this driver.
@@ -34,6 +40,10 @@ public class DriverWithUser {
      */
     public void setDistanceKm(double distanceKm) { this.distanceKm = distanceKm; }
 
+    /**
+     * GETTERES
+     * */
+
     public String getId() { return id; }
     public String getCurrentLocation() { return current_location; }
     public String getStatus() { return status; }
@@ -41,6 +51,7 @@ public class DriverWithUser {
     public double getCurrentLat() { return current_lat; }
     public double getCurrentLng() { return current_lng; }
     public double getDistanceKm() { return distanceKm; }
+    public double getEstimatedPrice() { return estimatedPrice; }
 
     /**
      * Task: converts this DriverWithUser to a plain Driver object.
