@@ -124,7 +124,7 @@ public class BlankFragment3 extends Fragment {
                 btnFindDrivers.setEnabled(true);
 
                 if (pickupLatLng == null || dropLatLng == null) {
-                    Toast.makeText(getContext(), "Could not find address. Try again.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Address not found or outside Israel. Please enter a valid Israeli address.", Toast.LENGTH_LONG).show();
                     tvRideStatus.setText("");
                     return;
                 }
