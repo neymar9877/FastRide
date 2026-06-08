@@ -1,5 +1,6 @@
 package com.example.bigproject;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -45,37 +46,48 @@ public class DriverActivity extends AppCompatActivity {
 
         // Sets up a listener to monitor tab changes made by the user
         bottomNavBar.setOnItemSelectedListener(item -> {
-
             Fragment selectedFragment = null;
 
             if (item.getItemId() == R.id.navigation_home) {
+
+                // check if the driver is driving - if so not letting him change fragments
+                SharedPreferences sp = getSharedPreferences("myPrefs", MODE_PRIVATE);
+                String rideId = sp.getString("activeRideId", null);
+                if (rideId != null) {
+                    Toast.makeText(this,
+                            "Cannot leave map during an active ride",
+                            Toast.LENGTH_SHORT).show();
+                    return false;
+                }
                 selectedFragment = new DriverHomeFragment();
             }
 
             else if (item.getItemId() == R.id.navigation_map) {
-                // Security Check: Block map access if the driver does not have an active ride
                 if (!rideAccepted) {
-                    Toast.makeText(this,
-                            "Accept a ride to open the map",
-                            Toast.LENGTH_SHORT).show();
-                    return false; // Returns false to cancel the navigation selection highlight
+                    Toast.makeText(this, "Accept a ride to open the map", Toast.LENGTH_SHORT).show();
+                    return false;
                 }
                 selectedFragment = new DriverMapFragment();
             }
 
             else if (item.getItemId() == R.id.navigation_settings) {
+                // block also settings fragment
+                SharedPreferences sp = getSharedPreferences("myPrefs", MODE_PRIVATE);
+                String rideId = sp.getString("activeRideId", null);
+                if (rideId != null) {
+                    Toast.makeText(this,
+                            "Cannot leave map during an active ride",
+                            Toast.LENGTH_SHORT).show();
+                    return false;
+                }
                 selectedFragment = new DriverSettingsFragment();
             }
 
-            // Executes the asynchronous screen transition if a matching route was resolved
             if (selectedFragment != null) {
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.driver_fragment_container, selectedFragment)
-                        .commit();
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.driver_fragment_container, selectedFragment).commit();
             }
-
-            return true; // Returns true to acknowledge and visually render the item selection
+            return true;
         });
     }
 
