@@ -158,10 +158,11 @@ public class DriverRepo extends BaseRepo {
      * Input: driverId (String), lat (double), lng (double), callBack
      * Output: true via callback if updated successfully
      */
-    public void updateDriverLocation(String driverId, double lat, double lng, RepoCallback<Boolean> callBack) {
+    public void updateDriverLocation(String driverId, double lat, double lng, String status, RepoCallback<Boolean> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers?id=eq." + driverId;
-        String json = "{\"current_lat\":" + lat + ",\"current_lng\":" + lng + ",\"status\":\"available\"}";
+        String json = "{\"current_lat\":" + lat + ",\"current_lng\":" + lng + ",\"status\":\"" + status + "\"}";
         RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
+        Log.d("CURRENT_PLACEEEEE", "current lat: " + lat + "current lng: " + lng);
 
         Request request = new Request.Builder()
                 .url(url)

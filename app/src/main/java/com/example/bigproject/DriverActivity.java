@@ -26,8 +26,42 @@ public class DriverActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_driver);
 
-        // Sets up the initial navigation bar configurations and default fragment placements.
+        validateActiveRide(); // clears stale ride on startup
         initNavigationBar();
+    }
+
+    // Task: Verifies the stored activeRideId still exists in Supabase with an active status.
+// If not found or already finished/declined — clears SharedPreferences and resets rideAccepted,
+// so the driver isn't permanently locked out of navigation.
+    private void validateActiveRide() {
+        SharedPreferences sp = getSharedPreferences("myPrefs", MODE_PRIVATE);
+        String rideId = sp.getString("activeRideId", null);
+        if (rideId == null) return;
+
+        RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
+            @Override
+            public void onSuccess(RideRequest ride) {
+                String status = ride.getStatus();
+                if ("finished".equals(status) || "declined".equals(status)
+                        || "cancelled".equals(status)) {
+                    // Ride is over — clear it and unlock navigation
+                    sp.edit()
+                            .remove("activeRideId")
+                            .putString("driverStatus", "available")
+                            .apply();
+                    rideAccepted = false;
+                }
+            }
+            @Override
+            public void onError(Exception e) {
+                // Ride not found in DB at all — clear everything
+                sp.edit()
+                        .remove("activeRideId")
+                        .putString("driverStatus", "available")
+                        .apply();
+                rideAccepted = false;
+            }
+        });
     }
 
     /**

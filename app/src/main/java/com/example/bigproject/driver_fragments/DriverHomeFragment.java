@@ -163,9 +163,14 @@ public class DriverHomeFragment extends Fragment {
                             if (locationResult == null) return;
                             android.location.Location location = locationResult.getLastLocation();
                             if (location != null && driverId != null) {
+                                SharedPreferences sp = requireContext()
+                                        .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                                String currentStatus = sp.getString("driverStatus", "on_the_way");
+
                                 driverRepo.updateDriverLocation(driverId,
                                         location.getLatitude(),
                                         location.getLongitude(),
+                                        currentStatus,
                                         new BaseRepo.RepoCallback<Boolean>() {
                                             @Override
                                             public void onSuccess(Boolean result) {
@@ -277,6 +282,8 @@ public class DriverHomeFragment extends Fragment {
                     requestsList.remove(position);
                     adapter.notifyItemRemoved(position);
                     Toast.makeText(getContext(), "Ride declined", Toast.LENGTH_SHORT).show();
+                    // הסטטוס "declined" נשמר ב-Supabase –
+                    // BlankFragment3 של הנוסע יזהה אותו בפולינג הבא
                 });
             }
             @Override

@@ -120,9 +120,17 @@ public class DriverMapFragment extends Fragment {
                 if (locationResult == null || driverId == null) return;
                 android.location.Location location = locationResult.getLastLocation();
                 if (location != null) {
+
+                    // Read the current ride status from SharedPreferences
+                    // to pass the correct status — never overwrite "on_the_way" with "available"
+                    SharedPreferences sp = requireContext()
+                            .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                    String currentStatus = sp.getString("driverStatus", "available");
+
                     driverRepo.updateDriverLocation(driverId,
                             location.getLatitude(),
                             location.getLongitude(),
+                            currentStatus, // pass status instead of hardcoding "available"
                             new BaseRepo.RepoCallback<Boolean>() {
                                 @Override public void onSuccess(Boolean result) {}
                                 @Override public void onError(Exception error) {
@@ -297,7 +305,11 @@ public class DriverMapFragment extends Fragment {
                 mapView.getController().setCenter(nextPoint);
 
                 // Update Supabase with car's current position on the route
-                driverRepo.updateDriverLocation(driverId, nextPoint.getLatitude(), nextPoint.getLongitude(),
+                SharedPreferences sp = requireContext()
+                        .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                String currentStatus = sp.getString("driverStatus", "on_the_way");
+
+                driverRepo.updateDriverLocation(driverId, nextPoint.getLatitude(), nextPoint.getLongitude(), currentStatus,
                         new BaseRepo.RepoCallback<Boolean>() {
                             @Override public void onSuccess(Boolean result) {}
                             @Override public void onError(Exception error) {}

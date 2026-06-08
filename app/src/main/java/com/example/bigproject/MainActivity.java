@@ -26,9 +26,38 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        validateActiveRide(); // call this first — clears stale ride if it no longer exists
         initNavigationBar();
         startPollingForRideAcceptance();
     }
+
+
+    // Task: Checks if the stored activeRideId still exists in Supabase and has a valid status.
+// If the ride is finished, declined, or doesn't exist — clears it from SharedPreferences.
+// Prevents the UI from being permanently locked after a crash or incomplete session.
+    private void validateActiveRide() {
+        SharedPreferences sp = getSharedPreferences("myPrefs", MODE_PRIVATE);
+        String rideId = sp.getString("activeRideId", null);
+        if (rideId == null) return;
+
+        RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
+            @Override
+            public void onSuccess(RideRequest ride) {
+                String status = ride.getStatus();
+                // If ride is finished, declined, or cancelled — clear it
+                if ("finished".equals(status) || "declined".equals(status)
+                        || "cancelled".equals(status)) {
+                    sp.edit().remove("activeRideId").apply();
+                }
+            }
+            @Override
+            public void onError(Exception e) {
+                // Ride ID not found in DB at all — safe to clear
+                sp.edit().remove("activeRideId").apply();
+            }
+        });
+    }
+
 
     // Task: Initializes the bottom navigation bar, sets the default fragment,
     // and blocks navigation away from the map during an active ride.

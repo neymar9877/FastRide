@@ -236,19 +236,22 @@ public class BlankFragment3 extends Fragment {
         );
 
         RideRepo.createRide(request, new BaseRepo.RepoCallback<RideRequest>() {
+            // החלף את הבלוק onSuccess של RideRepo.createRide:
             @Override
             public void onSuccess(RideRequest result) {
                 if (!isAdded()) return;
                 requireActivity().runOnUiThread(() -> {
-                    // Save rideId for status tracking
-                    SharedPreferences sp = requireContext().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                    SharedPreferences sp = requireContext()
+                            .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
                     sp.edit().putString("activeRideId", result.getId()).apply();
 
-                    tvRideStatus.setText("✅ Request sent! Waiting for driver to accept...");
+                    tvRideStatus.setText("✅ Request sent! Waiting for driver...");
                     btnConfirmRide.setVisibility(View.GONE);
                     btnFindDrivers.setEnabled(true);
-                    Toast.makeText(getContext(), "Ride requested!", Toast.LENGTH_SHORT).show();
-                    // Tell MainActivity to start polling
+
+                    // ===== התחל polling לזיהוי אישור או סירוב =====
+                    startPollingForResponse(result.getId());
+
                     if (getActivity() instanceof MainActivity) {
                         ((MainActivity) getActivity()).startPollingForRideAcceptance();
                     }
@@ -265,6 +268,78 @@ public class BlankFragment3 extends Fragment {
                 });
             }
         });
+    }
+
+    private Handler declineHandler = new Handler(Looper.getMainLooper());
+    private Runnable declineRunnable;
+
+    // Task: checks if the driver's choice, and notify if he declined.
+    private void startPollingForResponse(String rideId) {
+        declineRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!isAdded()) return;
+
+                RideRepo.getRideById(rideId, new BaseRepo.RepoCallback<RideRequest>() {
+                    @Override
+                    public void onSuccess(RideRequest ride) {
+                        if (!isAdded()) return;
+                        requireActivity().runOnUiThread(() -> {
+
+                            if ("declined".equals(ride.getStatus())) {
+                                // ===== הנהג דחה! =====
+                                declineHandler.removeCallbacks(declineRunnable);
+
+                                // נקה את ה-ride הפעיל
+                                requireContext()
+                                        .getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+                                        .edit().remove("activeRideId").apply();
+
+                                // הצג הודעה
+                                Toast.makeText(getContext(),
+                                        "❌ Driver declined your request. Please choose another driver.",
+                                        Toast.LENGTH_LONG).show();
+
+                                tvRideStatus.setText("Driver declined. Choose a different driver.");
+
+                                // ===== הסר את הנהג שסירב מהרשימה =====
+                                String declinedDriverId = ride.getDriverId();
+                                driversList.removeIf(d -> declinedDriverId.equals(d.getId()));
+                                driverAdapter.notifyDataSetChanged();
+
+                                // הצג שוב את כפתור החיפוש
+                                btnConfirmRide.setVisibility(View.GONE);
+                                btnFindDrivers.setEnabled(true);
+                                selectedDriver = null;
+
+                            } else if ("accepted".equals(ride.getStatus())
+                                    || "on_the_way".equals(ride.getStatus())) {
+                                // נהג קיבל – הפולינג של MainActivity יטפל במעבר למפה
+                                declineHandler.removeCallbacks(declineRunnable);
+
+                            } else {
+                                // עדיין ממתין – בדוק שוב בעוד 3 שניות
+                                declineHandler.postDelayed(declineRunnable, 3000);
+                            }
+                        });
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        if (isAdded())
+                            declineHandler.postDelayed(declineRunnable, 3000);
+                    }
+                });
+            }
+        };
+        declineHandler.post(declineRunnable);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // עצור polling כשהפרגמנט לא מוצג
+        if (declineHandler != null && declineRunnable != null)
+            declineHandler.removeCallbacks(declineRunnable);
     }
 
     // Task: Completely wipes all existing active user key records out of SharedPreferences and redirects the client device back onto LoginActivity.
