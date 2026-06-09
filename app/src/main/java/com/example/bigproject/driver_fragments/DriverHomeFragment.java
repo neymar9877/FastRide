@@ -50,6 +50,8 @@ public class DriverHomeFragment extends Fragment {
     private Handler pollHandler = new Handler(Looper.getMainLooper());
     private Runnable pollRunnable;
 
+    private com.google.android.gms.location.LocationCallback homeLocationCallback;
+
     public DriverHomeFragment() {}
 
     // Task: Inflates the fragment layout representing the driver's job request dashboard.
@@ -153,43 +155,47 @@ public class DriverHomeFragment extends Fragment {
                         .build();
 
         if (ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return;
 
-            fusedLocationClient.requestLocationUpdates(
-                    locationRequest,
-                    new com.google.android.gms.location.LocationCallback() {
-                        @Override
-                        public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
-                            if (locationResult == null) return;
-                            android.location.Location location = locationResult.getLastLocation();
-                            if (location != null && driverId != null) {
-                                SharedPreferences sp = requireContext()
-                                        .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
-                                String currentStatus = sp.getString("driverStatus", "on_the_way");
+        // Save to field so we can unregister it in onDestroyView
+        homeLocationCallback = new com.google.android.gms.location.LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
 
-                                driverRepo.updateDriverLocation(driverId,
-                                        location.getLatitude(),
-                                        location.getLongitude(),
-                                        currentStatus,
-                                        new BaseRepo.RepoCallback<Boolean>() {
-                                            @Override
-                                            public void onSuccess(Boolean result) {
-                                                Log.d("DriverHome", "Location saved: "
-                                                        + location.getLatitude() + ", "
-                                                        + location.getLongitude());
-                                            }
-                                            @Override
-                                            public void onError(Exception error) {
-                                                Log.e("DriverHome", "Location save failed: "
-                                                        + error.getMessage());
-                                            }
-                                        });
-                            }
-                        }
-                    },
-                    Looper.getMainLooper()
-            );
-        }
+                // Guard: fragment may have detached by the time GPS fires — stop immediately
+                if (!isAdded() || getContext() == null) {
+                    if (fusedLocationClient != null && homeLocationCallback != null)
+                        fusedLocationClient.removeLocationUpdates(homeLocationCallback);
+                    return;
+                }
+
+                if (locationResult == null) return;
+                android.location.Location location = locationResult.getLastLocation();
+                if (location != null && driverId != null) {
+                    driverRepo.updateDriverLocation(driverId,
+                            location.getLatitude(),
+                            location.getLongitude(),
+                            "available",
+                            new BaseRepo.RepoCallback<Boolean>() {
+                                @Override public void onSuccess(Boolean result) {
+                                    Log.d("DriverHome", "Location saved: "
+                                            + location.getLatitude() + ", "
+                                            + location.getLongitude());
+                                }
+                                @Override public void onError(Exception error) {
+                                    Log.e("DriverHome", "Location save failed: "
+                                            + error.getMessage());
+                                }
+                            });
+                }
+            }
+        };
+
+        fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                homeLocationCallback,
+                Looper.getMainLooper()
+        );
     }
 
     // Task: Begins a repeating loop using a Handler that periodically runs a fetch commands queue every 5000 milliseconds.
@@ -312,5 +318,19 @@ public class DriverHomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (driverId != null) startPolling();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Unregister GPS callback so it never fires into a detached fragment
+        if (fusedLocationClient != null && homeLocationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(homeLocationCallback);
+            homeLocationCallback = null;
+        }
+        // Stop polling as well
+        if (pollHandler != null && pollRunnable != null) {
+            pollHandler.removeCallbacks(pollRunnable);
+        }
     }
 }
