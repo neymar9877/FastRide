@@ -6,7 +6,10 @@ import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -160,9 +163,18 @@ public class DriverRepo extends BaseRepo {
      */
     public void updateDriverLocation(String driverId, double lat, double lng, String status, RepoCallback<Boolean> callBack) {
         String url = SUPABASE_URL + "/rest/v1/drivers?id=eq." + driverId;
-        String json = "{\"current_lat\":" + lat + ",\"current_lng\":" + lng + ",\"status\":\"" + status + "\"}";
+
+        // 1. Put the values inside a safe Key-Value Map
+        Map<String, Object> updateFields = new HashMap<>();
+        updateFields.put("current_lat", lat);
+        updateFields.put("current_lng", lng);
+        updateFields.put("status", status);
+
+        // 2. Let Gson serialize it flawlessly with correct decimal dots
+        String json = gson.toJson(updateFields);
+
         RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
-        Log.d("CURRENT_PLACEEEEE", "current lat: " + lat + "current lng: " + lng);
+        Log.d("CURRENT_PLACEEEEE", "coords: " + json);
 
         Request request = new Request.Builder()
                 .url(url)
