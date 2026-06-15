@@ -287,38 +287,36 @@ public class BlankFragment3 extends Fragment {
                         requireActivity().runOnUiThread(() -> {
 
                             if ("declined".equals(ride.getStatus())) {
-                                // ===== הנהג דחה! =====
                                 declineHandler.removeCallbacks(declineRunnable);
 
-                                // נקה את ה-ride הפעיל
+                                // Clear the active ride from SharedPreferences
                                 requireContext()
                                         .getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
                                         .edit().remove("activeRideId").apply();
 
-                                // הצג הודעה
                                 Toast.makeText(getContext(),
                                         "❌ Driver declined your request. Please choose another driver.",
                                         Toast.LENGTH_LONG).show();
 
-                                tvRideStatus.setText("Driver declined. Choose a different driver.");
-
-                                // ===== הסר את הנהג שסירב מהרשימה =====
+                                // Remove the declined driver from the list
                                 String declinedDriverId = ride.getDriverId();
-                                driversList.removeIf(d -> declinedDriverId.equals(d.getId()));
+                                driversList.removeIf(d -> declinedDriverId.equals(d.toDriver().getId()));
                                 driverAdapter.notifyDataSetChanged();
 
-                                // הצג שוב את כפתור החיפוש
-                                btnConfirmRide.setVisibility(View.GONE);
-                                btnFindDrivers.setEnabled(true);
+                                // Reset UI fully so user can pick another driver and press send again
                                 selectedDriver = null;
-
-                            } else if ("accepted".equals(ride.getStatus())
+                                btnConfirmRide.setVisibility(View.GONE);  // hide until user picks again
+                                btnConfirmRide.setEnabled(true);           // re-enable for next selection
+                                btnFindDrivers.setEnabled(true);
+                                tvRideStatus.setText("Choose a different driver.");
+                            }
+                            else if ("accepted".equals(ride.getStatus())
                                     || "on_the_way".equals(ride.getStatus())) {
-                                // נהג קיבל – הפולינג של MainActivity יטפל במעבר למפה
+                                // go to the map fragment
                                 declineHandler.removeCallbacks(declineRunnable);
 
                             } else {
-                                // עדיין ממתין – בדוק שוב בעוד 3 שניות
+                                // check every 3 seconds
                                 declineHandler.postDelayed(declineRunnable, 3000);
                             }
                         });

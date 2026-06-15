@@ -311,12 +311,8 @@ public class DriverMapFragment extends Fragment {
 
                 driverRepo.updateDriverLocation(driverId, nextPoint.getLatitude(), nextPoint.getLongitude(), currentStatus,
                         new BaseRepo.RepoCallback<Boolean>() {
-                            @Override public void onSuccess(Boolean result) {
-                                Log.d("checkinggggggggg", "the request succeded");
-                            }
-                            @Override public void onError(Exception error) {
-                                Log.d("checkinggggggggg", "the request isnt succeded" + error);
-                            }
+                            @Override public void onSuccess(Boolean result) {}
+                            @Override public void onError(Exception error) {}
                         });
 
                 // FIX 1: update past (gray) and remaining (blue) overlays
