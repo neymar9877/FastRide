@@ -12,7 +12,7 @@
         android:padding="8dp"
         tools:ignore="MissingConstraints">
 
-        <!-- תמונה של הנהג -->
+
         <ImageView
             android:id="@+id/imgDriver"
             android:layout_width="100dp"
@@ -21,7 +21,7 @@
             android:scaleType="centerCrop"
             android:src="@android:drawable/ic_menu_report_image" />
 
-        <!-- שם הנהג -->
+
         <TextView
             android:id="@+id/tvDriverName"
             android:layout_width="wrap_content"
@@ -33,21 +33,6 @@
             android:textSize="36sp"
             android:textStyle="bold" />
 
-        <!-- יעד הנסיעה -->
-        <TextView
-            android:id="@+id/tvCurrLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/tvDriverName"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="10dp"
-            android:layout_toEndOf="@id/imgDriver"
-            android:text="current_location"
-            android:textSize="20dp" />
-
-        <!-- מחיר -->
-
-        <!-- כפתור עדכון -->
 
         <TextView
             android:id="@+id/tvStatus"
@@ -55,7 +40,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_marginTop="69dp"
-            android:layout_marginEnd="31dp"
+            android:layout_marginEnd="160dp"
             android:layout_marginRight="15dp"
             android:text="status"
             android:textSize="25sp"

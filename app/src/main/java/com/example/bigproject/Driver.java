@@ -10,7 +10,6 @@ import java.io.Serializable;
  */
 public class Driver implements Serializable {
     private String id;
-    private String current_location;
     private String status; // "available" | "driving"
     private double current_lat;
     private double current_lng;
@@ -20,23 +19,21 @@ public class Driver implements Serializable {
 
     /**
      * Task: constructs a Driver with basic fields (no GPS coordinates).
-     * Input: id (String), current_location (String), status (String)
+     * Input: id (String), status (String)
      * Output: Driver instance
      */
-    public Driver(String id, String current_location, String status) {
+    public Driver(String id, String status) {
         this.id = id;
-        this.current_location = current_location;
         this.status = status;
     }
 
     /**
      * Task: constructs a Driver with full fields including GPS coordinates.
-     * Input: id, current_location, status, current_lat (double), current_lng (double)
+     * Input: id, status, current_lat (double), current_lng (double)
      * Output: Driver instance with all fields set
      */
-    public Driver(String id, String current_location, String status, double current_lat, double current_lng) {
+    public Driver(String id, String status, double current_lat, double current_lng) {
         this.id = id;
-        this.current_location = current_location;
         this.status = status;
         this.current_lat = current_lat;
         this.current_lng = current_lng;
@@ -44,9 +41,6 @@ public class Driver implements Serializable {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
-
-    public String getCurrentLocation() { return current_location; }
-    public void setCurrentLocation(String current_location) { this.current_location = current_location; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

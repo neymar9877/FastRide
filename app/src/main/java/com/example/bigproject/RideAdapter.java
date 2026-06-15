@@ -58,7 +58,6 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
         holder.txtDriver.setText(driver.getUsers().getUserName());
 
         // הצגת נתוני הנהג השמורים בטבלת הנהגים (Drivers)
-        holder.txtDestination.setText(driver.getCurrentLocation());
         holder.txtStatus.setText(driver.getStatus());
 
         // טעינת תמונת הפרופיל של הנהג בצורה אסינכרונית עם טיפול בשגיאות טעינה
@@ -99,13 +98,12 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
 
     // מחלקת ViewHolder המחזיקה הפניות (References) לרכיבי ה-UI הוויזואליים של כל שורת נהג
     public static class RideViewHolder extends RecyclerView.ViewHolder {
-        TextView txtDriver, txtDestination, txtStatus;
+        TextView txtDriver, txtStatus;
         ImageView imgRide;
 
         public RideViewHolder(@NonNull View itemView) {
             super(itemView);
             txtDriver = itemView.findViewById(R.id.tvDriverName);
-            txtDestination = itemView.findViewById(R.id.tvCurrLocation);
             txtStatus = itemView.findViewById(R.id.tvStatus);
             imgRide = itemView.findViewById(R.id.imgDriver);
         }

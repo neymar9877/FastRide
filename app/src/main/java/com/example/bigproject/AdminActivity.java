@@ -209,7 +209,7 @@ public class AdminActivity extends AppCompatActivity {
                     userRepo.addUser(newUser, new BaseRepo.RepoCallback<User>() {
                         @Override
                         public void onSuccess(User addedUser) {
-                            Driver newDriver = new Driver(addedUser.getId(), "", "available");
+                            Driver newDriver = new Driver(addedUser.getId(), "available");
                             driverRepo.addUser(newDriver, new BaseRepo.RepoCallback<Driver>() {
                                 @Override
                                 public void onSuccess(Driver result) {

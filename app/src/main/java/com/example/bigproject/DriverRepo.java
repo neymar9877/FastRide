@@ -132,7 +132,6 @@ public class DriverRepo extends BaseRepo {
                             for (Driver driver : drivers) {
                                 DriverWithUser driverWithUser = new DriverWithUser();
                                 driverWithUser.setId(driver.getId());
-                                driverWithUser.setCurrentLocation(driver.getCurrentLocation());
                                 driverWithUser.setStatus(driver.getStatus());
                                 for (User u : allUsers) {
                                     if (u.getId().equals(driver.getId())) {
@@ -281,7 +280,6 @@ public class DriverRepo extends BaseRepo {
                         for (Driver d : drivers) {
                             DriverWithUser dwu = new DriverWithUser();
                             dwu.setId(d.getId());
-                            dwu.setCurrentLocation(d.getCurrentLocation());
                             dwu.setStatus(d.getStatus());
                             dwu.setCurrentLat(d.getCurrentLat());
                             dwu.setCurrentLng(d.getCurrentLng());

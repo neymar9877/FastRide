@@ -118,7 +118,7 @@ public class LoginActivity extends AppCompatActivity {
                                 // If role is driver, also add to drivers table
                                 if (role.equals("driver")) {
                                     DriverRepo driverRepo = new DriverRepo();
-                                    Driver newDriver = new Driver(result.getId(), "", "available");
+                                    Driver newDriver = new Driver(result.getId(), "available");
                                     driverRepo.addUser(newDriver, new BaseRepo.RepoCallback<Driver>() {
                                         @Override
                                         public void onSuccess(Driver d) {
