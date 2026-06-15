@@ -117,31 +117,38 @@ public class DriverMapFragment extends Fragment {
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
+                // Guard: stop if fragment detached
+                if (!isAdded() || getContext() == null) {
+                    stopLocationUpdates();
+                    return;
+                }
                 if (locationResult == null || driverId == null) return;
                 android.location.Location location = locationResult.getLastLocation();
-                if (location != null) {
+                if (location == null) return;
 
-                    // Read the current ride status from SharedPreferences
-                    // to pass the correct status — never overwrite "on_the_way" with "available"
-                    SharedPreferences sp = requireContext()
-                            .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
-                    String currentStatus = sp.getString("driverStatus", "available");
+                // Read current status — don't overwrite "on_the_way" with "available"
+                SharedPreferences sp = requireContext()
+                        .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+                String status = sp.getString("driverStatus", "on_the_way");
 
-                    driverRepo.updateDriverLocation(driverId,
-                            location.getLatitude(),
-                            location.getLongitude(),
-                            currentStatus, // pass status instead of hardcoding "available"
-                            new BaseRepo.RepoCallback<Boolean>() {
-                                @Override public void onSuccess(Boolean result) {}
-                                @Override public void onError(Exception error) {
-                                    Log.e("DriverMap", "Location update failed: " + error.getMessage());
-                                }
-                            });
-                }
+                driverRepo.updateDriverLocation(driverId,
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        status, // fix: 5-param signature
+                        new BaseRepo.RepoCallback<Boolean>() {
+                            @Override public void onSuccess(Boolean r) {
+                                Log.d("DriverMap", "GPS updated: "
+                                        + location.getLatitude() + ", " + location.getLongitude());
+                            }
+                            @Override public void onError(Exception e) {
+                                Log.e("DriverMap", "GPS update failed: " + e.getMessage());
+                            }
+                        });
             }
         };
 
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+        fusedLocationClient.requestLocationUpdates(
+                locationRequest, locationCallback, Looper.getMainLooper());
     }
 
     // Task: Safe tear-down function that commands the FusedLocationProviderClient to disconnect active callbacks and stop GPS tracking.
@@ -304,18 +311,23 @@ public class DriverMapFragment extends Fragment {
                 carMarker.setPosition(nextPoint);
                 mapView.getController().setCenter(nextPoint);
 
-                // Update Supabase with car's current position on the route
+                // Replace the updateDriverLocation call inside carAnimator:
                 SharedPreferences sp = requireContext()
                         .getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
-                String currentStatus = sp.getString("driverStatus", "on_the_way");
+                String status = sp.getString("driverStatus", "on_the_way");
 
-                driverRepo.updateDriverLocation(driverId, nextPoint.getLatitude(), nextPoint.getLongitude(), currentStatus,
+                driverRepo.updateDriverLocation(driverId,
+                        nextPoint.getLatitude(),
+                        nextPoint.getLongitude(),
+                        status, // fix: 5-param signature
                         new BaseRepo.RepoCallback<Boolean>() {
-                            @Override public void onSuccess(Boolean result) {}
-                            @Override public void onError(Exception error) {}
+                            @Override public void onSuccess(Boolean r) {}
+                            @Override public void onError(Exception e) {
+                                Log.e("DriverMap", "Route update failed: " + e.getMessage());
+                            }
                         });
 
-                // FIX 1: update past (gray) and remaining (blue) overlays
+                // update past (gray) and remaining (blue) overlays
                 List<GeoPoint> past = new ArrayList<>(carPath.subList(0, carIndex));
                 List<GeoPoint> remaining = new ArrayList<>(carPath.subList(carIndex, carPath.size()));
                 pastRouteOverlay.setPoints(past);
@@ -402,6 +414,16 @@ public class DriverMapFragment extends Fragment {
         super.onPause();
         if (mapView != null) mapView.onPause();
         if (carHandler != null && carAnimator != null) carHandler.removeCallbacks(carAnimator);
-        stopLocationUpdates(); // FIX 2: stop GPS updates when fragment pauses
+    }
+
+    // Task: Only stop GPS when fragment is fully destroyed
+    // Input: None.
+    // Output: None.
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        stopLocationUpdates();
+        if (carHandler != null && carAnimator != null)
+            carHandler.removeCallbacks(carAnimator);
     }
 }
