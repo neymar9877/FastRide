@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bigproject.BaseRepo;
+import com.example.bigproject.Repositories.BaseRepo;
 import com.example.bigproject.DriverActivity;
 import com.example.bigproject.DriverRepo;
 import com.example.bigproject.R;
@@ -323,12 +323,12 @@ public class DriverHomeFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Unregister GPS callback so it never fires into a detached fragment
+        // Unregister GPS callback so it never fires into a detached fragment - turn off the gps part
         if (fusedLocationClient != null && homeLocationCallback != null) {
             fusedLocationClient.removeLocationUpdates(homeLocationCallback);
             homeLocationCallback = null;
         }
-        // Stop polling as well
+        // Stop polling as well - the loop that checking for status_ride
         if (pollHandler != null && pollRunnable != null) {
             pollHandler.removeCallbacks(pollRunnable);
         }
