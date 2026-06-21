@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,7 +17,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.List;
 
+import com.example.bigproject.Models.Driver;
+import com.example.bigproject.R;
 import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Repositories.DriverRepo;
+import com.example.bigproject.Repositories.UserRepo;
+import com.example.bigproject.Models.User;
 
 
 public class LoginActivity extends AppCompatActivity {
@@ -26,8 +31,6 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnSignUp;
     private CheckBox cbRememberme;
     private SharedPreferences sp;
-
-    String deafultImageUrl = "https://img.freepik.com/premium-vector/default-male-user-profile-icon-vector-illustration_276184-168.jpg";
 
 
     @Override
@@ -95,7 +98,7 @@ public class LoginActivity extends AppCompatActivity {
                     String role = (selectedId == R.id.rbDriver) ? "driver" : "passenger";
 
                     String finalImage = image.isEmpty()
-                            ? "https://img.freepik.com/premium-vector/default-male-user-profile-icon-vector-illustration_276184-168.jpg"
+                            ? AdminActivity.DEFAULT_IMAGE_URL
                             : image;
 
                     User newUser = new User(null, name, pass, email, phone, finalImage, role);

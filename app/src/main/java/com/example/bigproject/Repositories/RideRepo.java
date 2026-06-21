@@ -1,10 +1,10 @@
-package com.example.bigproject;
+package com.example.bigproject.Repositories;
 
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
 
-import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Models.RideRequest;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.lang.reflect.Type;

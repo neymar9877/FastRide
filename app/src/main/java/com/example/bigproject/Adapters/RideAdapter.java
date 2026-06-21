@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Adapters;
 
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -17,6 +17,9 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
+import com.example.bigproject.Activities.AdminActivity;
+import com.example.bigproject.Models.DriverWithUser;
+import com.example.bigproject.R;
 
 import java.util.List;
 
@@ -66,13 +69,19 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                        // הדפסת שגיאה ל-Logcat במידה והקישור לתמונה שבור או שאין חיבור לרשת
+                        //  הדפסת שגיאה ל-Logcat
                         Log.e("ImageLoad", "Failed to load image for driver: "
-                                + driver.getUsers().getUserName() + " → showing default");
+                                + driver.getUsers().getUserName() + " → updating to default URL");
 
-                        // הצגת תמונת רכב כברירת מחדל במקרה של כישלון
+                        // עדכון האובייקט בזיכרון ל-URL הדיפולטי (כך שבפעם הבאה הדיאלוג יראה את ה-URL הנכון)
+                        if (driver.getUsers() != null) {
+                            driver.getUsers().setImageUrl(AdminActivity.DEFAULT_IMAGE_URL);
+                        }
+
+                        // הצגת תמונת רכב כברירת מחדל במקרה של כישלון על המסך מיידית
                         holder.imgRide.setImageResource(R.drawable.baseline_directions_car_24);
-                        return true; // החזרת true מסמנת ל-Glide שטיפלנו בשגיאה בעצמנו
+
+                        return true;
                     }
 
                     @Override

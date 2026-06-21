@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Adapters;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.bigproject.Models.DriverWithUser;
+import com.example.bigproject.R;
 
 import java.util.List;
 

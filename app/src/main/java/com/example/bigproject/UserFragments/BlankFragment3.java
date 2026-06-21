@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.UserFragments;
 
 import android.content.Context;
 import android.content.Intent;
@@ -22,8 +22,17 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.bigproject.Adapters.DriverSelectAdapter;
+import com.example.bigproject.Models.DriverWithUser;
+import com.example.bigproject.GeoUtils;
 import com.example.bigproject.GeoUtils.LatLng;
+import com.example.bigproject.Activities.LoginActivity;
+import com.example.bigproject.Activities.MainActivity;
+import com.example.bigproject.R;
 import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Repositories.DriverRepo;
+import com.example.bigproject.Repositories.RideRepo;
+import com.example.bigproject.Models.RideRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;

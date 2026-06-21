@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Adapters;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,7 +8,11 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.bigproject.Models.RideRequest;
+import com.example.bigproject.Models.User;
+import com.example.bigproject.R;
 import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Repositories.UserRepo;
 
 import java.util.List;
 

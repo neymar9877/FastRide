@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#F5F6FA"
-    tools:context=".AdminActivity">
+    tools:context=".Activities.AdminActivity">
 
     <!-- ===== HEADER ===== -->
     <androidx.cardview.widget.CardView

@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Activities;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -6,7 +6,12 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.bigproject.R;
 import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Repositories.RideRepo;
+import com.example.bigproject.Models.RideRequest;
+import com.example.bigproject.UserFragments.BlankFragment2;
+import com.example.bigproject.UserFragments.BlankFragment3;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import android.os.Handler;

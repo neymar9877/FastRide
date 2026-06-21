@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.UserFragments;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -16,7 +16,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.bigproject.Activities.MainActivity;
+import com.example.bigproject.R;
 import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Repositories.DriverRepo;
+import com.example.bigproject.Repositories.RideRepo;
+import com.example.bigproject.Models.RideRequest;
 
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;

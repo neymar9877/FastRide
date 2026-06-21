@@ -17,10 +17,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.bigproject.Repositories.BaseRepo;
-import com.example.bigproject.LoginActivity;
+import com.example.bigproject.Activities.LoginActivity;
 import com.example.bigproject.R;
-import com.example.bigproject.User;
-import com.example.bigproject.UserRepo;
+import com.example.bigproject.Models.User;
+import com.example.bigproject.Repositories.UserRepo;
 
 public class DriverSettingsFragment extends Fragment {
     View logoutBtn;

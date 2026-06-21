@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,7 +21,14 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.bigproject.Models.Driver;
+import com.example.bigproject.Models.DriverWithUser;
+import com.example.bigproject.R;
 import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Repositories.DriverRepo;
+import com.example.bigproject.Repositories.UserRepo;
+import com.example.bigproject.Adapters.RideAdapter;
+import com.example.bigproject.Models.User;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.Gson;

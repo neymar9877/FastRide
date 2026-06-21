@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Models;
 
 /**
  * Helper model class that combines Driver and User data.

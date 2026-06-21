@@ -19,11 +19,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.bigproject.Repositories.BaseRepo;
-import com.example.bigproject.DriverActivity;
-import com.example.bigproject.DriverRepo;
+import com.example.bigproject.Activities.DriverActivity;
+import com.example.bigproject.Repositories.DriverRepo;
 import com.example.bigproject.R;
-import com.example.bigproject.RideRepo;
-import com.example.bigproject.RideRequest;
+import com.example.bigproject.Repositories.RideRepo;
+import com.example.bigproject.Models.RideRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;

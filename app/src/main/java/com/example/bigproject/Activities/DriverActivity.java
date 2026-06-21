@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Activities;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -7,7 +7,10 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.example.bigproject.R;
 import com.example.bigproject.Repositories.BaseRepo;
+import com.example.bigproject.Repositories.RideRepo;
+import com.example.bigproject.Models.RideRequest;
 import com.example.bigproject.driver_fragments.DriverHomeFragment;
 import com.example.bigproject.driver_fragments.DriverMapFragment;
 import com.example.bigproject.driver_fragments.DriverSettingsFragment;

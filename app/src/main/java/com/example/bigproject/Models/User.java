@@ -1,4 +1,4 @@
-package com.example.bigproject;
+package com.example.bigproject.Models;
 
 /**
  * Model class representing a user in the system.
